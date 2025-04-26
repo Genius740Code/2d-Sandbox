@@ -10,4 +10,8 @@
 *.out
 *.app
 
+# Build directories
 obj/
+bin/
+
+/smfl

@@ -1,75 +1,67 @@
-# Windows Makefile for 2D Minecraft
-# Run with: mingw32-make
-
-# Compiler and flags
 CXX = g++
-CXXFLAGS = -Wall -Wextra -O3 -std=c++17 
-LDFLAGS = -lgdi32 -luser32 -lgdiplus
+CXXFLAGS = -Wall -Wextra -std=c++17 -O2
+SFML_INCLUDE = -I./SFML/include
+SFML_LIB_DIR = ./SFML/build/lib
+SFML_LIBS = -lsfml-graphics -lsfml-window -lsfml-system
 
-# Source and build directories
-SRCDIR = src
-OBJDIR = obj
+# Detect Windows platform and adjust commands accordingly
+ifeq ($(OS),Windows_NT)
+    MKDIR = if not exist $(subst /,\,$1) mkdir $(subst /,\,$1)
+    RM = if exist $(subst /,\,$1) rmdir /s /q $(subst /,\,$1)
+    COPY = if exist $(subst /,\,$1) copy $(subst /,\,$1) $(subst /,\,$2)
+    PATHSEP = \\
+    EXE = .exe
+else
+    MKDIR = mkdir -p $1
+    RM = rm -rf $1
+    COPY = cp -f $1 $2
+    PATHSEP = /
+    EXE =
+endif
 
-# Executable name
-EXECUTABLE = main
-TEST_EXECUTABLE = test_perlin
+SRC_DIR = src
+OBJ_DIR = obj
+BIN_DIR = bin
 
-# Source files
-SOURCES = $(SRCDIR)/main.cpp \
-          $(SRCDIR)/engine/PerlinNoise.cpp \
-          $(SRCDIR)/engine/TextureManager.cpp \
-          $(SRCDIR)/game/World.cpp \
-          $(SRCDIR)/game/Game.cpp
+MAIN = $(BIN_DIR)/terrain_generator$(EXE)
 
-# Test source files
-TEST_SOURCES = $(SRCDIR)/TestPerlinNoise.cpp \
-               $(SRCDIR)/engine/PerlinNoise.cpp
+SRCS = $(SRC_DIR)/main.cpp
+OBJS = $(SRCS:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 
-# Object files
-OBJECTS = $(SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
-TEST_OBJECTS = $(TEST_SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
+all: directories $(MAIN)
 
-# OS detection - assumes Windows
-RM = del /Q /S
-MKDIR = mkdir
-EXE_EXT = .exe
+directories:
+	$(call MKDIR,$(OBJ_DIR))
+	$(call MKDIR,$(BIN_DIR))
 
-# Create output directories
-$(shell if not exist $(OBJDIR) mkdir $(OBJDIR))
-$(shell if not exist $(OBJDIR)\engine mkdir $(OBJDIR)\engine)
-$(shell if not exist $(OBJDIR)\game mkdir $(OBJDIR)\game)
+$(MAIN): $(OBJS)
+	$(CXX) $(CXXFLAGS) $(OBJS) -o $(MAIN) -L$(SFML_LIB_DIR) $(SFML_LIBS)
 
-.PHONY: all clean run test test_run
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
+	$(CXX) $(CXXFLAGS) $(SFML_INCLUDE) -c $< -o $@
 
-all: $(EXECUTABLE)
+# Try alternative paths for SFML libraries if the default path doesn't work
+check_paths:
+	@echo "Checking SFML paths..."
+	@if exist SFML\lib (echo "Found SFML\lib") else (echo "SFML\lib not found")
+	@if exist SFML\build\lib (echo "Found SFML\build\lib") else (echo "SFML\build\lib not found")
+	@if exist SFML\bin (echo "Found SFML\bin") else (echo "SFML\bin not found")
+	@if exist SFML\build\bin (echo "Found SFML\build\bin") else (echo "SFML\build\bin not found")
 
-$(EXECUTABLE): $(OBJECTS)
-	$(CXX) $(CXXFLAGS) $^ -o $@$(EXE_EXT) $(LDFLAGS)
-	@echo "Build complete: $@"
-	@echo "Run with: ./$(EXECUTABLE)"
+# Windows-specific DLL copying
+copy_dlls:
+	$(call MKDIR,$(BIN_DIR))
+	@echo "Trying to copy DLLs from multiple possible locations..."
+	-$(call COPY,SFML$(PATHSEP)bin$(PATHSEP)*.dll,$(BIN_DIR)$(PATHSEP))
+	-$(call COPY,SFML$(PATHSEP)build$(PATHSEP)bin$(PATHSEP)*.dll,$(BIN_DIR)$(PATHSEP))
+	-$(call COPY,SFML$(PATHSEP)extlibs$(PATHSEP)bin$(PATHSEP)*.dll,$(BIN_DIR)$(PATHSEP))
 
-$(OBJDIR)/%.o: $(SRCDIR)/%.cpp
-	$(CXX) $(CXXFLAGS) -c $< -o $@
-
-# Test targets
-test: $(TEST_EXECUTABLE)
-
-$(TEST_EXECUTABLE): $(TEST_OBJECTS)
-	$(CXX) $(CXXFLAGS) $^ -o $@$(EXE_EXT) $(LDFLAGS)
-	@echo "Test build complete: $@"
-	@echo "Run with: ./$(TEST_EXECUTABLE)"
-
-test_run: test
-	./$(TEST_EXECUTABLE)$(EXE_EXT)
+run: $(MAIN)
+	@echo "Running $(MAIN)..."
+	@$(MAIN)
 
 clean:
-	$(RM) $(OBJDIR)
-	$(RM) $(EXECUTABLE)$(EXE_EXT)
-	$(RM) $(TEST_EXECUTABLE)$(EXE_EXT)
+	$(call RM,$(OBJ_DIR))
+	$(call RM,$(BIN_DIR))
 
-run: all
-	./$(EXECUTABLE)$(EXE_EXT)
-
-# Quick build (legacy)
-quick:
-	g++ -Wall -Wextra -O3 -std=c++17 main.cpp -o main.exe -lgdi32 -luser32
+.PHONY: all clean run directories copy_dlls check_paths 
