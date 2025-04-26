@@ -36,6 +36,7 @@ echo Compiling project...
 g++ -Wall -Wextra -std=c++17 -O2 -I./SFML/include -c src/main.cpp -o obj/main.o
 g++ -Wall -Wextra -std=c++17 -O2 -I./SFML/include -c src/World.cpp -o obj/World.o
 g++ -Wall -Wextra -std=c++17 -O2 -I./SFML/include -c src/Camera.cpp -o obj/Camera.o
+g++ -Wall -Wextra -std=c++17 -O2 -I./SFML/include -c src/Chunk.cpp -o obj/Chunk.o
 
 if %ERRORLEVEL% NEQ 0 (
     echo.
@@ -46,7 +47,7 @@ if %ERRORLEVEL% NEQ 0 (
 )
 
 echo Linking...
-g++ obj/main.o obj/World.o obj/Camera.o -o bin/main.exe -L./SFML/lib -lsfml-graphics -lsfml-window -lsfml-system -static-libgcc -static-libstdc++
+g++ obj/main.o obj/World.o obj/Camera.o obj/Chunk.o -o bin/main.exe -L./SFML/lib -lsfml-graphics -lsfml-window -lsfml-system -static-libgcc -static-libstdc++
 
 if %ERRORLEVEL% NEQ 0 (
     echo.
@@ -57,7 +58,8 @@ if %ERRORLEVEL% NEQ 0 (
 )
 
 echo.
-echo Running 2D Minecraft terrain generator...
+echo Running 2D Minecraft chunked world generator...
+echo World is 1,000,000 blocks wide with 16-block chunks (only 7 chunks active at once).
 echo Press Space to generate new terrain, WASD/arrow keys to scroll, Escape to exit.
 echo.
 cd bin

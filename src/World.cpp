@@ -1,42 +1,39 @@
 #include "World.h"
-#include <random>
+#include <algorithm>
+#include <cmath>
 
-World::World(int w, int h, int tileSize, uint64_t seed) : 
-    width(w), 
-    height(h), 
-    tileSize(tileSize)
+World::World(int height, int tileSize, uint64_t seed) : 
+    worldHeight(height),
+    tileSize(tileSize),
+    currentSeed(seed),
+    terrainNoise(seed)
 {
     initializeTextures();
     
-    // Initialize the world with air
-    tiles.resize(width, std::vector<TileType>(height, AIR));
-    
-    // Generate terrain
-    generateTerrain(seed);
-    
-    // Generate trees
-    generateTrees(seed);
-    
-    // Build sprite array for faster rendering
-    buildSpriteArray();
+    // Initialize with a completely empty world
+    // Chunks will be generated on demand when update() is called
+}
+
+World::~World() {
+    // Clean up all active chunks
+    for (auto& pair : activeChunks) {
+        delete pair.second;
+    }
+    activeChunks.clear();
 }
 
 void World::reset(uint64_t seed) {
-    // Clear existing data
-    tiles.clear();
-    sprites.clear();
+    // Delete all existing chunks
+    for (auto& pair : activeChunks) {
+        delete pair.second;
+    }
+    activeChunks.clear();
     
-    // Reinitialize the world with air
-    tiles.resize(width, std::vector<TileType>(height, AIR));
+    // Set new seed
+    currentSeed = seed;
+    terrainNoise = PerlinNoise(seed);
     
-    // Generate new terrain
-    generateTerrain(seed);
-    
-    // Generate new trees
-    generateTrees(seed);
-    
-    // Rebuild sprite array
-    buildSpriteArray();
+    // Chunks will be regenerated on next update
 }
 
 void World::initializeTextures() {
@@ -57,7 +54,7 @@ void World::initializeTextures() {
         std::cerr << "Failed to load leaves texture!" << std::endl;
     }
     
-    // Scale textures to tile size
+    // Disable texture smoothing
     grassTexture.setSmooth(false);
     dirtTexture.setSmooth(false);
     stoneTexture.setSmooth(false);
@@ -65,168 +62,61 @@ void World::initializeTextures() {
     leavesTexture.setSmooth(false);
 }
 
-void World::generateTerrain(uint64_t seed) {
-    PerlinNoise terrain(seed);
+void World::updateActiveChunks(int centerChunkX) {
+    // Calculate range of chunks to keep active (centered on the player's view)
+    int minChunk = std::max(0, centerChunkX - MAX_CHUNKS / 2);
+    int maxChunk = std::min(TOTAL_CHUNKS - 1, centerChunkX + MAX_CHUNKS / 2);
     
-    // Parameters for terrain generation
-    const double scale = 0.05;
-    const int dirtLayers = 3;
-    const int baseHeight = height * 0.5;
-    const int hillHeight = height * 0.18;
-    
-    // Generate the base terrain heightmap
-    std::vector<int> heightMap(width);
-    for (int x = 0; x < width; x++) {
-        double heightValue = terrain.noise(x * scale, 0) * 0.5 + 0.5;
-        int terrainHeight = baseHeight - hillHeight * heightValue;
-        heightMap[x] = terrainHeight;
-        
-        if (terrainHeight >= 0 && terrainHeight < height) {
-            tiles[x][terrainHeight] = GRASS;
-            
-            for (int dirt = 1; dirt <= dirtLayers; dirt++) {
-                int y = terrainHeight + dirt;
-                if (y < height) {
-                    tiles[x][y] = DIRT;
-                }
-            }
-            
-            for (int y = terrainHeight + dirtLayers + 1; y < height; y++) {
-                tiles[x][y] = STONE;
-            }
+    // Remove chunks that are now too far away
+    std::vector<int> chunksToRemove;
+    for (auto& pair : activeChunks) {
+        int chunkX = pair.first;
+        if (chunkX < minChunk || chunkX > maxChunk) {
+            chunksToRemove.push_back(chunkX);
         }
     }
     
-    // Add bedrock at the bottom
-    for (int x = 0; x < width; x++) {
-        tiles[x][height - 1] = BEDROCK;
+    for (int chunkX : chunksToRemove) {
+        delete activeChunks[chunkX];
+        activeChunks.erase(chunkX);
     }
-}
-
-void World::generateTrees(uint64_t seed) {
-    std::mt19937 rng(seed);
-    std::uniform_int_distribution<int> treeDist(0, 100); // Probability of tree generation
-    std::uniform_int_distribution<int> heightDist(4, 6); // Tree height variation (4-6 blocks tall)
     
-    // Find suitable positions for trees (on grass blocks)
-    for (int x = 6; x < width - 6; x++) {
-        // Only place a tree if random chance is met (about 8%)
-        if (treeDist(rng) > 92) {
-            // Find the ground level at this x position
-            for (int y = 0; y < height; y++) {
-                if (tiles[x][y] == GRASS) {
-                    // Place a tree at this position if there's enough room above
-                    int treeHeight = heightDist(rng);
-                    if (y - treeHeight > 4) { // Ensure enough space for trunk and leaves
-                        // Place trunk sections (vertical column)
-                        for (int i = 1; i <= treeHeight; i++) {
-                            tiles[x][y-i] = TRUNK;
-                        }
-                        
-                        // The top position of the trunk
-                        int topY = y - treeHeight;
-                        
-                        // Minecraft-style tree leaf pattern
-                        // Layer 1 (bottom) - wider layer
-                        for (int lx = x - 2; lx <= x + 2; lx++) {
-                            for (int ly = topY - 1; ly <= topY; ly++) {
-                                if (lx < 0 || lx >= width || ly < 0 || ly >= height) continue;
-                                
-                                // Skip some corner blocks for more natural shape
-                                if ((lx == x - 2 || lx == x + 2) && treeDist(rng) < 40) continue;
-                                
-                                if (tiles[lx][ly] == AIR) {
-                                    tiles[lx][ly] = LEAVES;
-                                }
-                            }
-                        }
-                        
-                        // Layer 2 (middle) - full layer
-                        for (int lx = x - 2; lx <= x + 2; lx++) {
-                            if (lx < 0 || lx >= width) continue;
-                            
-                            int ly = topY - 2;
-                            if (ly < 0 || ly >= height) continue;
-                            
-                            // Make corners a bit more sparse
-                            if ((lx == x - 2 || lx == x + 2) && (treeDist(rng) < 30)) continue;
-                            
-                            if (tiles[lx][ly] == AIR) {
-                                tiles[lx][ly] = LEAVES;
-                            }
-                        }
-                        
-                        // Layer 3 (top) - smaller layer
-                        for (int lx = x - 1; lx <= x + 1; lx++) {
-                            if (lx < 0 || lx >= width) continue;
-                            
-                            int ly = topY - 3;
-                            if (ly < 0 || ly >= height) continue;
-                            
-                            if (tiles[lx][ly] == AIR) {
-                                tiles[lx][ly] = LEAVES;
-                            }
-                        }
-                        
-                        // Top leaf
-                        if (topY - 4 >= 0) {
-                            tiles[x][topY - 4] = LEAVES;
-                        }
-                    }
-                    break; // Stop after finding the ground level
-                }
-            }
+    // Add new chunks that are now in range
+    for (int chunkX = minChunk; chunkX <= maxChunk; chunkX++) {
+        if (activeChunks.find(chunkX) == activeChunks.end()) {
+            // Create a new chunk
+            Chunk* newChunk = new Chunk(
+                chunkX, 
+                CHUNK_WIDTH, 
+                worldHeight, 
+                tileSize,
+                &grassTexture, 
+                &dirtTexture, 
+                &stoneTexture, 
+                &trunkTexture, 
+                &leavesTexture
+            );
+            
+            // Generate terrain for this chunk
+            newChunk->generate(terrainNoise, currentSeed, chunkX * CHUNK_WIDTH);
+            
+            // Add to active chunks
+            activeChunks[chunkX] = newChunk;
         }
     }
 }
 
-void World::buildSpriteArray() {
-    sprites.clear();
-    sprites.reserve(width * height);
+void World::update(float viewCenterX) {
+    // Calculate which chunk the view is centered on
+    int centerChunkX = static_cast<int>(viewCenterX) / (CHUNK_WIDTH * tileSize);
     
-    // Create a sprite for each tile
-    for (int x = 0; x < width; x++) {
-        for (int y = 0; y < height; y++) {
-            if (tiles[x][y] != AIR) {
-                sf::Sprite sprite;
-                
-                switch (tiles[x][y]) {
-                    case GRASS:
-                        sprite.setTexture(grassTexture);
-                        break;
-                    case DIRT:
-                        sprite.setTexture(dirtTexture);
-                        break;
-                    case STONE:
-                    case BEDROCK:
-                        sprite.setTexture(stoneTexture);
-                        break;
-                    case TRUNK:
-                        sprite.setTexture(trunkTexture);
-                        break;
-                    case LEAVES:
-                        sprite.setTexture(leavesTexture);
-                        break;
-                    default:
-                        continue; // Skip air tiles
-                }
-                
-                // Scale sprite to match tile size
-                float scaleX = static_cast<float>(tileSize) / sprite.getTexture()->getSize().x;
-                float scaleY = static_cast<float>(tileSize) / sprite.getTexture()->getSize().y;
-                sprite.setScale(scaleX, scaleY);
-                
-                // Position the sprite
-                sprite.setPosition(x * tileSize, y * tileSize);
-                
-                sprites.push_back(sprite);
-            }
-        }
-    }
+    // Update which chunks are active
+    updateActiveChunks(centerChunkX);
 }
 
 void World::draw(sf::RenderWindow& window) {
-    for (const auto& sprite : sprites) {
-        window.draw(sprite);
+    // Draw all active chunks
+    for (auto& pair : activeChunks) {
+        pair.second->draw(window);
     }
 } 

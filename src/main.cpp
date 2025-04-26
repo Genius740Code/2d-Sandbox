@@ -14,12 +14,11 @@ int main() {
     // Create window
     const int windowWidth = 1280;
     const int windowHeight = 720;
-    sf::RenderWindow window(sf::VideoMode(windowWidth, windowHeight), "2D Minecraft Terrain Generation");
+    sf::RenderWindow window(sf::VideoMode(windowWidth, windowHeight), "2D Minecraft Chunked World Generator");
     window.setFramerateLimit(60);
     
     // World parameters
-    const int worldWidth = 400;  // Wider world
-    const int worldHeight = 200; // Taller world
+    const int worldHeight = 200;
     const int tileSize = 16;
     
     // Creative mode flag
@@ -35,9 +34,10 @@ int main() {
     std::uniform_int_distribution<uint64_t> dis(seedMin, seedMax);
     uint64_t seed = dis(gen);
     
-    // Print the seed
+    // Print the seed and controls
     std::cout << "Generated world with seed: " << seed << std::endl;
-    std::cout << "The world now has procedurally generated terrain!" << std::endl;
+    std::cout << "The world is now 1,000,000 blocks wide with 16-block chunks!" << std::endl;
+    std::cout << "Only 7 chunks are active at a time to optimize performance." << std::endl;
     std::cout << "Controls:" << std::endl;
     std::cout << "  WASD/Arrows: Move camera" << std::endl;
     std::cout << "  C: Toggle creative mode (affects movement speed)" << std::endl;
@@ -47,11 +47,24 @@ int main() {
     std::cout << "  Esc: Exit" << std::endl;
     
     // Create the world
-    World world(worldWidth, worldHeight, tileSize, seed);
+    World world(worldHeight, tileSize, seed);
     
     // Create camera
-    Camera camera(windowWidth, windowHeight, worldWidth * tileSize, worldHeight * tileSize);
+    Camera camera(windowWidth, windowHeight, world.getWorldWidth(), world.getWorldHeight());
     camera.setCreativeMode(creativeMode);
+    
+    // Font for chunk info
+    sf::Font font;
+    if (!font.loadFromFile("C:\\Windows\\Fonts\\Arial.ttf")) {
+        std::cerr << "Failed to load font!" << std::endl;
+    }
+    
+    sf::Text chunkText;
+    chunkText.setFont(font);
+    chunkText.setCharacterSize(14);
+    chunkText.setFillColor(sf::Color::White);
+    chunkText.setOutlineColor(sf::Color::Black);
+    chunkText.setOutlineThickness(1);
     
     // Main game loop
     sf::Clock clock;
@@ -118,14 +131,41 @@ int main() {
             camera.move(dx, dy, dt);
         }
         
+        // Get the current camera view
+        const sf::View& view = camera.getView();
+        float centerX = view.getCenter().x;
+        
+        // Update the world (load/unload chunks)
+        world.update(centerX);
+        
+        // Update chunk information text
+        int currentChunk = static_cast<int>(centerX) / (16 * tileSize);
+        
+        std::string chunkInfo = "Chunk: " + std::to_string(currentChunk) + 
+                              " / 62499 | Position: " + std::to_string(static_cast<int>(centerX)) + 
+                              " / " + std::to_string(world.getWorldWidth());
+        chunkText.setString(chunkInfo);
+        
         // Update the view
-        window.setView(camera.getView());
+        window.setView(view);
         
         // Clear the window
         window.clear(sf::Color(135, 206, 235)); // Sky blue background
         
         // Draw the world
         world.draw(window);
+        
+        // Draw UI elements with fixed position relative to the view
+        sf::View prevView = window.getView();
+        sf::View uiView = window.getDefaultView();
+        window.setView(uiView);
+        
+        // Position the text in the top-left corner
+        chunkText.setPosition(10, 10);
+        window.draw(chunkText);
+        
+        // Restore the game view
+        window.setView(prevView);
         
         // Display the window
         window.display();

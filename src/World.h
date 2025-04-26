@@ -2,50 +2,47 @@
 
 #include <SFML/Graphics.hpp>
 #include <vector>
+#include <map>
 #include <iostream>
 #include <cstdint>
 #include "PerlinNoise.h"
-
-// Tile types for our 2D Minecraft-like terrain
-enum TileType {
-    AIR,
-    GRASS,
-    DIRT,
-    STONE,
-    BEDROCK,
-    TRUNK,
-    LEAVES
-};
+#include "Chunk.h"
 
 class World {
 private:
-    int width, height;
-    int tileSize;
-    std::vector<std::vector<TileType>> tiles;
+    static const int MAX_CHUNKS = 7;         // Maximum number of active chunks
+    static const int CHUNK_WIDTH = 16;       // Width of a chunk in blocks
+    static const int TOTAL_CHUNKS = 62500;   // Total chunks in the world (1,000,000 / 16)
     
+    int worldHeight;                         // Height of the world in blocks
+    int tileSize;                            // Size of a tile in pixels
+    uint64_t currentSeed;                    // Current world seed
+    
+    // Textures
     sf::Texture grassTexture;
     sf::Texture dirtTexture;
     sf::Texture stoneTexture;
     sf::Texture trunkTexture;
     sf::Texture leavesTexture;
     
-    // To store the sprites for faster rendering
-    std::vector<sf::Sprite> sprites;
+    // Perlin noise generator for terrain
+    PerlinNoise terrainNoise;
     
-    // Cave generation parameters removed
+    // Map of active chunks (key is chunk X position)
+    std::map<int, Chunk*> activeChunks;
     
     void initializeTextures();
-    void buildSpriteArray();
-    void generateTerrain(uint64_t seed);
-    void generateTrees(uint64_t seed);
-    // Cave generation methods removed
-
+    void updateActiveChunks(int centerChunkX);
+    
 public:
-    World(int w, int h, int tileSize, uint64_t seed);
+    World(int worldHeight, int tileSize, uint64_t seed);
+    ~World();
+    
     void reset(uint64_t seed);
     void draw(sf::RenderWindow& window);
+    void update(float viewCenterX);
     
     // Get dimensions for camera boundaries
-    int getWorldWidth() const { return width * tileSize; }
-    int getWorldHeight() const { return height * tileSize; }
+    int getWorldWidth() const { return TOTAL_CHUNKS * CHUNK_WIDTH * tileSize; }
+    int getWorldHeight() const { return worldHeight * tileSize; }
 }; 
