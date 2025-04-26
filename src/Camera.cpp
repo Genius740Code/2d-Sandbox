@@ -7,9 +7,9 @@ Camera::Camera(int vpWidth, int vpHeight, int wWidth, int wHeight) :
     worldHeight(wHeight),
     moveSpeed(500.0f) {
     
-    // Initialize view centered on the world
-    view.setSize(static_cast<float>(vpWidth) * 1.3f, static_cast<float>(vpHeight) * 1.3f);
-    view.setCenter(wWidth / 2.0f, wHeight / 2.0f);
+    // Initialize view with a closer zoom (smaller size = closer zoom)
+    view.setSize(static_cast<float>(vpWidth) * 0.7f, static_cast<float>(vpHeight) * 0.7f);
+    view.setCenter(wWidth / 2.0f, wHeight / 3.0f); // Position to see more of the surface
 }
 
 void Camera::move(float dx, float dy, float dt) {
@@ -18,8 +18,8 @@ void Camera::move(float dx, float dy, float dt) {
     float newY = view.getCenter().y + dy * moveSpeed * dt;
     
     // Apply bounds checking
-    newX = std::max(viewportWidth / 2.0f, std::min(newX, worldWidth - viewportWidth / 2.0f));
-    newY = std::max(viewportHeight / 2.0f, std::min(newY, worldHeight - viewportHeight / 2.0f));
+    newX = std::max(viewportWidth / 4.0f, std::min(newX, worldWidth - viewportWidth / 4.0f));
+    newY = std::max(viewportHeight / 4.0f, std::min(newY, worldHeight - viewportHeight / 4.0f));
     
     // Set the new center
     view.setCenter(newX, newY);
@@ -44,8 +44,8 @@ void Camera::setCreativeMode(bool isCreative) {
 }
 
 void Camera::reset() {
-    // Center horizontally but position vertically to see more underground
-    view.setCenter(worldWidth / 2.0f, worldHeight / 2.0f);
-    // Reset zoom to default
-    view.setSize(static_cast<float>(viewportWidth), static_cast<float>(viewportHeight));
+    // Center horizontally but position vertically to see more of the surface
+    view.setCenter(worldWidth / 2.0f, worldHeight / 3.0f);
+    // Reset zoom to closer default view
+    view.setSize(static_cast<float>(viewportWidth) * 0.7f, static_cast<float>(viewportHeight) * 0.7f);
 } 

@@ -14,4 +14,5 @@
 obj/
 bin/
 
-smfl/
+# SFML directory
+SFML/

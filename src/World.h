@@ -12,7 +12,9 @@ enum TileType {
     GRASS,
     DIRT,
     STONE,
-    BEDROCK
+    BEDROCK,
+    TRUNK,
+    LEAVES
 };
 
 class World {
@@ -24,6 +26,8 @@ private:
     sf::Texture grassTexture;
     sf::Texture dirtTexture;
     sf::Texture stoneTexture;
+    sf::Texture trunkTexture;
+    sf::Texture leavesTexture;
     
     // To store the sprites for faster rendering
     std::vector<sf::Sprite> sprites;
@@ -33,6 +37,7 @@ private:
     void initializeTextures();
     void buildSpriteArray();
     void generateTerrain(uint64_t seed);
+    void generateTrees(uint64_t seed);
     // Cave generation methods removed
 
 public:
