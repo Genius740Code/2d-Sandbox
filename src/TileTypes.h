@@ -1,6 +1,6 @@
 #pragma once
 
-// Tile types for our 2D Minecraft-like terrain
+
 enum TileType {
     AIR,
     GRASS,
@@ -14,5 +14,6 @@ enum TileType {
     COAL_ORE,
     IRON_ORE,
     GOLD_ORE,
-    DIAMOND_ORE
+    DIAMOND_ORE,
+    GRAVELED_STONE
 }; 

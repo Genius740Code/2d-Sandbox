@@ -16,3 +16,10 @@ bin/
 
 # SFML directory
 SFML/
+sfml*/
+*.dll
+openal32.dll
+
+# Visual Studio artifacts
+.vs/
+*.vcxproj.user

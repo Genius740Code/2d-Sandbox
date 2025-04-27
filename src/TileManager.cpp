@@ -18,6 +18,7 @@ void TileManager::initializeTileFilenames() {
     tileFilenames[IRON_ORE] = "stone_silver.png"; // Using silver for iron
     tileFilenames[GOLD_ORE] = "stone_gold.png";
     tileFilenames[DIAMOND_ORE] = "stone_diamond.png";
+    tileFilenames[GRAVELED_STONE] = "gravel_stone.png";
 }
 
 bool TileManager::loadTextures() {

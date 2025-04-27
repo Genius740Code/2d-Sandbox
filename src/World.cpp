@@ -71,6 +71,7 @@ void World::updateActiveChunks(int centerChunkX) {
                 tileManager.getTexture(GRASS), 
                 tileManager.getTexture(DIRT), 
                 tileManager.getTexture(STONE), 
+                tileManager.getTexture(GRAVELED_STONE),
                 tileManager.getTexture(TRUNK), 
                 tileManager.getTexture(LEAVES)
             );

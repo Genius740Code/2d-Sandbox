@@ -3,7 +3,7 @@
 
 Chunk::Chunk(int x, int width, int height, int tileSize, 
              sf::Texture* grass, sf::Texture* dirt, sf::Texture* stone, 
-             sf::Texture* trunk, sf::Texture* leaves) :
+             sf::Texture* graveledStone, sf::Texture* trunk, sf::Texture* leaves) :
     chunkX(x),
     chunkWidth(width),
     worldHeight(height),
@@ -12,6 +12,7 @@ Chunk::Chunk(int x, int width, int height, int tileSize,
     grassTexture(grass),
     dirtTexture(dirt),
     stoneTexture(stone),
+    graveledStoneTexture(graveledStone),
     trunkTexture(trunk),
     leavesTexture(leaves) {
     
@@ -34,6 +35,10 @@ void Chunk::generateTerrain(PerlinNoise& terrainNoise, uint64_t seed, int worldO
     const int baseHeight = worldHeight * 0.5;
     const int hillHeight = worldHeight * 0.18;
     
+    // Setup random number generator for graveled stone distribution
+    std::mt19937 rng(seed + chunkX);
+    std::uniform_int_distribution<int> stoneDist(0, 1); // 50% chance for graveled stone
+    
     // Generate the base terrain heightmap for this chunk
     for (int x = 0; x < chunkWidth; x++) {
         // Calculate the world x-coordinate
@@ -54,7 +59,11 @@ void Chunk::generateTerrain(PerlinNoise& terrainNoise, uint64_t seed, int worldO
             }
             
             for (int y = terrainHeight + dirtLayers + 1; y < worldHeight; y++) {
-                tiles[x][y] = STONE;
+                if (stoneDist(rng) == 0) {
+                    tiles[x][y] = STONE;
+                } else {
+                    tiles[x][y] = GRAVELED_STONE;
+                }
             }
         }
     }
@@ -65,7 +74,7 @@ void Chunk::generateTerrain(PerlinNoise& terrainNoise, uint64_t seed, int worldO
     }
 }
 
-void Chunk::generateTrees(uint64_t seed, int worldOffset) {
+void Chunk::generateTrees(uint64_t seed, int /*worldOffset*/) {
     std::mt19937 rng(seed + chunkX); // Use chunk position to vary the seed
     std::uniform_int_distribution<int> treeDist(0, 100); // Probability of tree generation
     std::uniform_int_distribution<int> heightDist(4, 6); // Tree height variation (4-6 blocks tall)
@@ -164,6 +173,11 @@ void Chunk::buildSpriteArray() {
                         sprite.setTexture(*dirtTexture);
                         break;
                     case STONE:
+                        sprite.setTexture(*stoneTexture);
+                        break;
+                    case GRAVELED_STONE:
+                        sprite.setTexture(*graveledStoneTexture);
+                        break;
                     case BEDROCK:
                         sprite.setTexture(*stoneTexture);
                         break;

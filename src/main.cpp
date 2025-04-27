@@ -5,6 +5,7 @@
 #include <iostream>
 #include <cstdint>
 #include <string>
+#include <sstream>  // Added for string formatting
 
 #include "PerlinNoise.h"
 #include "World.h"
@@ -53,7 +54,7 @@ int main() {
     Camera camera(windowWidth, windowHeight, world.getWorldWidth(), world.getWorldHeight());
     camera.setCreativeMode(creativeMode);
     
-    // Font for chunk info
+    // Font for chunk info and FPS
     sf::Font font;
     if (!font.loadFromFile("C:\\Windows\\Fonts\\Arial.ttf")) {
         std::cerr << "Failed to load font!" << std::endl;
@@ -66,11 +67,35 @@ int main() {
     chunkText.setOutlineColor(sf::Color::Black);
     chunkText.setOutlineThickness(1);
     
+    // FPS counter text
+    sf::Text fpsText;
+    fpsText.setFont(font);
+    fpsText.setCharacterSize(14);
+    fpsText.setFillColor(sf::Color::Green);
+    fpsText.setOutlineColor(sf::Color::Black);
+    fpsText.setOutlineThickness(1);
+    fpsText.setPosition(10, 30);
+    
     // Main game loop
     sf::Clock clock;
+    sf::Clock fpsClock;
+    int frameCount = 0;
+    float fpsUpdateTime = 0.0f;
+    float fps = 0.0f;
+    
     while (window.isOpen()) {
         // Time delta for smooth movement
         float dt = clock.restart().asSeconds();
+        
+        // Update FPS counter
+        frameCount++;
+        fpsUpdateTime += dt;
+        if (fpsUpdateTime >= 0.5f) { // Update FPS twice per second
+            fps = frameCount / fpsUpdateTime;
+            frameCount = 0;
+            fpsUpdateTime = 0.0f;
+            fpsText.setString("FPS: " + std::to_string(static_cast<int>(fps)));
+        }
         
         // Process events
         sf::Event event;
@@ -163,6 +188,7 @@ int main() {
         // Position the text in the top-left corner
         chunkText.setPosition(10, 10);
         window.draw(chunkText);
+        window.draw(fpsText);
         
         // Restore the game view
         window.setView(prevView);

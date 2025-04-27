@@ -91,4 +91,19 @@ public:
         // Normalize to 0-1 range
         return total / maxValue;
     }
+    
+    // Specialized function for cave generation that creates more connected tunnels
+    double caveNoise(double x, double y, double z, double worminess = 0.5) {
+        // Use multiple noise layers at different frequencies
+        double n1 = noise(x, y * worminess, z);
+        double n2 = noise(x * 2.0, y * 2.0 * worminess, z * 2.0) * 0.5;
+        double n3 = noise(x * 4.0, y * 4.0 * worminess, z * 4.0) * 0.25;
+        
+        // Combine noise layers
+        double combinedNoise = n1 + n2 + n3;
+        
+        // Apply a transformation to create more tunnel-like structures
+        // This creates sharper transitions between cave and solid
+        return (std::tanh(combinedNoise * 2.0 - 1.0) + 1.0) * 0.5;
+    }
 }; 

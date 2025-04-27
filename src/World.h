@@ -19,11 +19,11 @@ private:
     int tileSize;                            // Size of a tile in pixels
     uint64_t currentSeed;                    // Current world seed
     
+    // Perlin noise generator for terrain
+    PerlinNoise terrainNoise;                // For terrain height
+    
     // Tile manager
     TileManager tileManager;
-    
-    // Perlin noise generator for terrain
-    PerlinNoise terrainNoise;
     
     // Map of active chunks (key is chunk X position)
     std::map<int, Chunk*> activeChunks;

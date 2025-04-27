@@ -3,16 +3,7 @@
 #include <SFML/Graphics.hpp>
 #include <vector>
 #include "PerlinNoise.h"
-
-enum TileType {
-    AIR,
-    GRASS,
-    DIRT,
-    STONE,
-    BEDROCK,
-    TRUNK,
-    LEAVES
-};
+#include "TileTypes.h"
 
 class Chunk {
 private:
@@ -28,6 +19,7 @@ private:
     sf::Texture* grassTexture;
     sf::Texture* dirtTexture;
     sf::Texture* stoneTexture;
+    sf::Texture* graveledStoneTexture;
     sf::Texture* trunkTexture;
     sf::Texture* leavesTexture;
     
@@ -38,7 +30,7 @@ private:
 public:
     Chunk(int x, int width, int height, int tileSize, 
           sf::Texture* grass, sf::Texture* dirt, sf::Texture* stone, 
-          sf::Texture* trunk, sf::Texture* leaves);
+          sf::Texture* graveledStone, sf::Texture* trunk, sf::Texture* leaves);
     
     void generate(PerlinNoise& terrainNoise, uint64_t seed, int worldOffset);
     void draw(sf::RenderWindow& window);

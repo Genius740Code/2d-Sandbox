@@ -67,6 +67,7 @@ if %ERRORLEVEL% NEQ 0 (
 echo.
 echo Running 2D Minecraft chunked world generator...
 echo World is 1,000,000 blocks wide with 16-block chunks (only 7 chunks active at once).
+echo Added FPS counter to track performance.
 echo Press Space to generate new terrain, WASD/arrow keys to scroll, Escape to exit.
 echo.
 cd bin
