@@ -6,9 +6,13 @@ World::World(int height, int tileSize, uint64_t seed) :
     worldHeight(height),
     tileSize(tileSize),
     currentSeed(seed),
-    terrainNoise(seed)
+    terrainNoise(seed),
+    tileManager("kenney_voxel-pack/PNG/Tiles/")
 {
-    initializeTextures();
+    // Load textures
+    if (!tileManager.loadTextures()) {
+        std::cerr << "Failed to load one or more textures!" << std::endl;
+    }
     
     // Initialize with a completely empty world
     // Chunks will be generated on demand when update() is called
@@ -34,32 +38,6 @@ void World::reset(uint64_t seed) {
     terrainNoise = PerlinNoise(seed);
     
     // Chunks will be regenerated on next update
-}
-
-void World::initializeTextures() {
-    // Load textures
-    if (!grassTexture.loadFromFile("kenney_voxel-pack/PNG/Tiles/dirt_grass.png")) {
-        std::cerr << "Failed to load grass texture!" << std::endl;
-    }
-    if (!dirtTexture.loadFromFile("kenney_voxel-pack/PNG/Tiles/dirt.png")) {
-        std::cerr << "Failed to load dirt texture!" << std::endl;
-    }
-    if (!stoneTexture.loadFromFile("kenney_voxel-pack/PNG/Tiles/stone.png")) {
-        std::cerr << "Failed to load stone texture!" << std::endl;
-    }
-    if (!trunkTexture.loadFromFile("kenney_voxel-pack/PNG/Tiles/trunk_side.png")) {
-        std::cerr << "Failed to load trunk texture!" << std::endl;
-    }
-    if (!leavesTexture.loadFromFile("kenney_voxel-pack/PNG/Tiles/leaves_transparent.png")) {
-        std::cerr << "Failed to load leaves texture!" << std::endl;
-    }
-    
-    // Disable texture smoothing
-    grassTexture.setSmooth(false);
-    dirtTexture.setSmooth(false);
-    stoneTexture.setSmooth(false);
-    trunkTexture.setSmooth(false);
-    leavesTexture.setSmooth(false);
 }
 
 void World::updateActiveChunks(int centerChunkX) {
@@ -90,11 +68,11 @@ void World::updateActiveChunks(int centerChunkX) {
                 CHUNK_WIDTH, 
                 worldHeight, 
                 tileSize,
-                &grassTexture, 
-                &dirtTexture, 
-                &stoneTexture, 
-                &trunkTexture, 
-                &leavesTexture
+                tileManager.getTexture(GRASS), 
+                tileManager.getTexture(DIRT), 
+                tileManager.getTexture(STONE), 
+                tileManager.getTexture(TRUNK), 
+                tileManager.getTexture(LEAVES)
             );
             
             // Generate terrain for this chunk

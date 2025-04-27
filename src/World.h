@@ -7,6 +7,7 @@
 #include <cstdint>
 #include "PerlinNoise.h"
 #include "Chunk.h"
+#include "TileManager.h"
 
 class World {
 private:
@@ -18,12 +19,8 @@ private:
     int tileSize;                            // Size of a tile in pixels
     uint64_t currentSeed;                    // Current world seed
     
-    // Textures
-    sf::Texture grassTexture;
-    sf::Texture dirtTexture;
-    sf::Texture stoneTexture;
-    sf::Texture trunkTexture;
-    sf::Texture leavesTexture;
+    // Tile manager
+    TileManager tileManager;
     
     // Perlin noise generator for terrain
     PerlinNoise terrainNoise;
@@ -31,7 +28,6 @@ private:
     // Map of active chunks (key is chunk X position)
     std::map<int, Chunk*> activeChunks;
     
-    void initializeTextures();
     void updateActiveChunks(int centerChunkX);
     
 public:

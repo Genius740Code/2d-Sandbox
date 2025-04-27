@@ -17,6 +17,8 @@ if not exist SFML\include\SFML (
 REM Create necessary directories
 if not exist obj mkdir obj
 if not exist bin mkdir bin
+if not exist bin\assets mkdir bin\assets
+if not exist bin\assets\textures mkdir bin\assets\textures
 
 REM Ensure the DLLs are copied first
 echo Copying DLLs...
@@ -25,10 +27,14 @@ copy SFML\bin\*.dll bin
 REM Copy texture directories to bin
 echo Copying textures...
 if exist kenney_voxel-pack (
+    REM Copy to original directory structure for backward compatibility
     if not exist bin\kenney_voxel-pack mkdir bin\kenney_voxel-pack
     if not exist bin\kenney_voxel-pack\PNG mkdir bin\kenney_voxel-pack\PNG
     if not exist bin\kenney_voxel-pack\PNG\Tiles mkdir bin\kenney_voxel-pack\PNG\Tiles
     copy kenney_voxel-pack\PNG\Tiles\*.png bin\kenney_voxel-pack\PNG\Tiles\
+    
+    REM Also copy to the new assets/textures directory
+    copy kenney_voxel-pack\PNG\Tiles\*.png bin\assets\textures\
 )
 
 REM Compile source files
@@ -37,6 +43,7 @@ g++ -Wall -Wextra -std=c++17 -O2 -I./SFML/include -c src/main.cpp -o obj/main.o
 g++ -Wall -Wextra -std=c++17 -O2 -I./SFML/include -c src/World.cpp -o obj/World.o
 g++ -Wall -Wextra -std=c++17 -O2 -I./SFML/include -c src/Camera.cpp -o obj/Camera.o
 g++ -Wall -Wextra -std=c++17 -O2 -I./SFML/include -c src/Chunk.cpp -o obj/Chunk.o
+g++ -Wall -Wextra -std=c++17 -O2 -I./SFML/include -c src/TileManager.cpp -o obj/TileManager.o
 
 if %ERRORLEVEL% NEQ 0 (
     echo.
@@ -47,7 +54,7 @@ if %ERRORLEVEL% NEQ 0 (
 )
 
 echo Linking...
-g++ obj/main.o obj/World.o obj/Camera.o obj/Chunk.o -o bin/main.exe -L./SFML/lib -lsfml-graphics -lsfml-window -lsfml-system -static-libgcc -static-libstdc++
+g++ obj/main.o obj/World.o obj/Camera.o obj/Chunk.o obj/TileManager.o -o bin/main.exe -L./SFML/lib -lsfml-graphics -lsfml-window -lsfml-system -static-libgcc -static-libstdc++
 
 if %ERRORLEVEL% NEQ 0 (
     echo.
