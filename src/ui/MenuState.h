@@ -6,6 +6,38 @@
 #include <functional>
 #include "Button.h"
 
+// Slider class for UI controls like FPS
+class Slider {
+private:
+    sf::RectangleShape track;
+    sf::RectangleShape handle;
+    sf::Text valueText;
+    sf::Font* font;
+    
+    float minValue;
+    float maxValue;
+    float currentValue;
+    bool isDragging;
+    
+    std::function<void(float)> onValueChange;
+
+public:
+    Slider(sf::Font* font, float min, float max, float initial, 
+           sf::Vector2f size, sf::Vector2f position);
+    
+    void setPosition(sf::Vector2f position);
+    void setValue(float value);
+    float getValue() const;
+    void setOnValueChange(std::function<void(float)> callback);
+    void updateText();
+    
+    bool contains(sf::Vector2f point) const;
+    bool handleContains(sf::Vector2f point) const;
+    void update(sf::Vector2f mousePos);
+    void handleEvent(const sf::Event& event, sf::Vector2f mousePos);
+    void draw(sf::RenderWindow& window);
+};
+
 enum class GameState {
     MAIN_MENU,
     WORLD_CREATION,
@@ -44,6 +76,10 @@ private:
     // Options settings
     int maxFps;
     
+    // Current game state
+    GameState currentState;
+    bool isInputActive;
+    
     // Text fields for world creation
     sf::Text worldNameText;
     sf::Text worldNameLabel;
@@ -51,11 +87,11 @@ private:
     sf::Text difficultyLabel;
     
     sf::RectangleShape textInputBox;
-    bool isInputActive;
     
     Button modeButton;
     Button difficultyButton;
     Button fpsButton;
+    Slider fpsSlider;
     
     // Callback for state changes
     std::function<void(GameState)> onStateChange;

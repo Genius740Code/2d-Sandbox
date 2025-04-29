@@ -43,6 +43,7 @@ g++ -Wall -Wextra -std=c++17 -O2 -I./SFML/include -c src/world/TileManager.cpp -
 g++ -Wall -Wextra -std=c++17 -O2 -I./SFML/include -c src/engine/PerlinNoise.cpp -o obj/engine/PerlinNoise.o
 g++ -Wall -Wextra -std=c++17 -O2 -I./SFML/include -c src/ui/Button.cpp -o obj/ui/Button.o
 g++ -Wall -Wextra -std=c++17 -O2 -I./SFML/include -c src/ui/MenuState.cpp -o obj/ui/MenuState.o
+g++ -Wall -Wextra -std=c++17 -O2 -I./SFML/include -c src/ui/Slider.cpp -o obj/ui/Slider.o
 
 if %ERRORLEVEL% NEQ 0 (
     echo.
@@ -53,7 +54,7 @@ if %ERRORLEVEL% NEQ 0 (
 )
 
 echo Linking...
-g++ obj/main.o obj/world/World.o obj/engine/Camera.o obj/world/Chunk.o obj/world/TileManager.o obj/engine/PerlinNoise.o obj/ui/Button.o obj/ui/MenuState.o -o bin/main.exe -L./SFML/lib -lsfml-graphics -lsfml-window -lsfml-system -static-libgcc -static-libstdc++
+g++ obj/main.o obj/world/World.o obj/engine/Camera.o obj/world/Chunk.o obj/world/TileManager.o obj/engine/PerlinNoise.o obj/ui/Button.o obj/ui/MenuState.o obj/ui/Slider.o -o bin/main.exe -L./SFML/lib -lsfml-graphics -lsfml-window -lsfml-system -static-libgcc -static-libstdc++
 
 if %ERRORLEVEL% NEQ 0 (
     echo.

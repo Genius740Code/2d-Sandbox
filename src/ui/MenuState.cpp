@@ -6,10 +6,12 @@ MenuState::MenuState() :
     gameMode(GameMode::SURVIVAL), 
     difficulty(Difficulty::NORMAL),
     maxFps(60),
+    currentState(GameState::MAIN_MENU),
     isInputActive(false),
     modeButton(&font, "SURVIVAL", sf::Vector2f(200, 50), sf::Vector2f(0, 0)),
     difficultyButton(&font, "NORMAL", sf::Vector2f(200, 50), sf::Vector2f(0, 0)),
-    fpsButton(&font, "60 FPS", sf::Vector2f(200, 50), sf::Vector2f(0, 0))
+    fpsButton(&font, "60 FPS", sf::Vector2f(200, 50), sf::Vector2f(0, 0)),
+    fpsSlider(&font, 0, 240, 60, sf::Vector2f(200, 20), sf::Vector2f(0, 0))
 {
     // Set defaults for callbacks
     onStateChange = [](GameState) {};
@@ -53,6 +55,7 @@ bool MenuState::initialize() {
 
 void MenuState::setupMainMenu() {
     buttons.clear();
+    currentState = GameState::MAIN_MENU;
     
     // Set the title
     title.setString("2D Minecraft");
@@ -99,40 +102,43 @@ void MenuState::setupMainMenu() {
 
 void MenuState::setupWorldCreation() {
     buttons.clear();
+    currentState = GameState::WORLD_CREATION;
     
-    // Set the title
     title.setString("Create New World");
     title.setOrigin(title.getLocalBounds().width / 2, title.getLocalBounds().height / 2);
     title.setPosition(640, 100);
     
-    // Define button size and colors for a more modern and appealing look
-    sf::Vector2f buttonSize(220, 50);
+    sf::Vector2f buttonSize(200, 50);
     sf::Color buttonIdle(56, 56, 56, 230);
     sf::Color buttonHover(90, 90, 90, 230);
     sf::Color buttonActive(35, 35, 35, 230);
     sf::Color textColor(255, 255, 255);
-    sf::Color accentColor(32, 168, 96);
     
-    // World name input field
+    // World name input
     worldNameLabel.setFont(font);
     worldNameLabel.setCharacterSize(24);
     worldNameLabel.setString("World Name:");
     worldNameLabel.setFillColor(sf::Color::White);
     worldNameLabel.setOutlineColor(sf::Color::Black);
     worldNameLabel.setOutlineThickness(1);
-    worldNameLabel.setPosition(440, 200);
+    worldNameLabel.setPosition(440, 220);
     
+    // Text input box
     textInputBox.setSize(sf::Vector2f(300, 40));
-    textInputBox.setPosition(640, 200);
-    textInputBox.setFillColor(sf::Color(25, 25, 25, 230));
-    textInputBox.setOutlineColor(sf::Color::White);
+    textInputBox.setPosition(sf::Vector2f(640, 220));
+    textInputBox.setFillColor(sf::Color(30, 30, 30, 200));
     textInputBox.setOutlineThickness(2);
+    textInputBox.setOutlineColor(sf::Color(100, 100, 100, 200));
     
+    // Text for world name
     worldNameText.setFont(font);
-    worldNameText.setCharacterSize(20);
+    worldNameText.setCharacterSize(22);
     worldNameText.setString(worldName);
     worldNameText.setFillColor(sf::Color::White);
-    worldNameText.setPosition(650, 210);
+    worldNameText.setPosition(
+        textInputBox.getPosition().x + 10, 
+        textInputBox.getPosition().y + 5
+    );
     
     // Game mode selector
     gameModeLabel.setFont(font);
@@ -141,13 +147,13 @@ void MenuState::setupWorldCreation() {
     gameModeLabel.setFillColor(sf::Color::White);
     gameModeLabel.setOutlineColor(sf::Color::Black);
     gameModeLabel.setOutlineThickness(1);
-    gameModeLabel.setPosition(440, 280);
+    gameModeLabel.setPosition(440, 290);
     
-    modeButton = Button(&font, getGameModeString(), buttonSize, sf::Vector2f(640, 280));
+    modeButton = Button(&font, getGameModeString(), buttonSize, sf::Vector2f(640, 290));
     modeButton.setColors(buttonIdle, buttonHover, buttonActive, textColor);
+    
     modeButton.setOnClick([this]() {
         cycleGameMode();
-        modeButton.setText(getGameModeString());
     });
     
     // Difficulty selector
@@ -163,7 +169,6 @@ void MenuState::setupWorldCreation() {
     difficultyButton.setColors(buttonIdle, buttonHover, buttonActive, textColor);
     difficultyButton.setOnClick([this]() {
         cycleDifficulty();
-        difficultyButton.setText(getDifficultyString());
     });
     
     // Create World button
@@ -199,6 +204,7 @@ void MenuState::setupWorldCreation() {
 
 void MenuState::setupOptions() {
     buttons.clear();
+    currentState = GameState::OPTIONS;
     
     title.setString("Options");
     title.setOrigin(title.getLocalBounds().width / 2, title.getLocalBounds().height / 2);
@@ -219,11 +225,10 @@ void MenuState::setupOptions() {
     fpsLabel.setOutlineThickness(1);
     fpsLabel.setPosition(440, 280);
     
-    fpsButton = Button(&font, getFpsString(), buttonSize, sf::Vector2f(640, 280));
-    fpsButton.setColors(buttonIdle, buttonHover, buttonActive, textColor);
-    fpsButton.setOnClick([this]() {
-        cycleFps();
-        fpsButton.setText(getFpsString());
+    // Remove fpsButton and replace with slider
+    fpsSlider = Slider(&font, 0, 240, maxFps, sf::Vector2f(200, 20), sf::Vector2f(640, 290));
+    fpsSlider.setOnValueChange([this](float value) {
+        maxFps = static_cast<int>(value);
         onMaxFpsChange(maxFps);
     });
     
@@ -239,40 +244,33 @@ void MenuState::setupOptions() {
         onStateChange(GameState::MAIN_MENU);
     });
     
-    buttons.push_back(fpsButton);
+    // We don't add the slider to the buttons vector
     buttons.push_back(backButton);
 }
 
 void MenuState::handleEvent(const sf::Event& event, sf::RenderWindow& window) {
+    // Get mouse position in window coordinates
     sf::Vector2f mousePos = window.mapPixelToCoords(sf::Mouse::getPosition(window));
     
-    // Handle button events
+    // Handle button interactions
     for (auto& button : buttons) {
         button.handleEvent(event, mousePos);
     }
     
-    // Text input handling (for world creation menu)
-    if (buttons.size() > 3) { // This is a hacky way to check if we're in world creation menu
+    // Handle slider interactions if in options menu
+    if (currentState == GameState::OPTIONS) {
+        fpsSlider.handleEvent(event, mousePos);
+    }
+    
+    // Handle text input for world name
+    if (buttons.size() > 3) { // Only in world creation state
         if (event.type == sf::Event::MouseButtonPressed) {
-            bool wasInputActive = isInputActive;
-            isInputActive = textInputBox.getGlobalBounds().contains(mousePos);
-            
-            if (isInputActive) {
-                textInputBox.setOutlineColor(sf::Color::Yellow);
-                
-                // Clear default text on first click
-                if (!wasInputActive && worldName == "New World") {
-                    worldName = "";
-                    worldNameText.setString(worldName);
-                }
+            if (textInputBox.getGlobalBounds().contains(mousePos)) {
+                isInputActive = true;
+                textInputBox.setOutlineColor(sf::Color(100, 200, 100, 200));
             } else {
-                textInputBox.setOutlineColor(sf::Color::White);
-                
-                // If text is empty when clicking away, restore default
-                if (worldName.empty()) {
-                    worldName = "New World";
-                    worldNameText.setString(worldName);
-                }
+                isInputActive = false;
+                textInputBox.setOutlineColor(sf::Color(100, 100, 100, 200));
             }
         }
         
@@ -281,82 +279,58 @@ void MenuState::handleEvent(const sf::Event& event, sf::RenderWindow& window) {
                 if (!worldName.empty()) {
                     worldName.pop_back();
                 }
-            }
-            else if (event.text.unicode == 13) { // Enter
+            } 
+            else if (event.text.unicode == 13) { // Enter key
                 isInputActive = false;
-                textInputBox.setOutlineColor(sf::Color::White);
-                
-                // If text is empty when pressing enter, restore default
-                if (worldName.empty()) {
-                    worldName = "New World";
-                }
             }
-            else if (event.text.unicode < 128 && event.text.unicode != 8) {
-                if (worldName.size() < 20) { // Limit the world name length
+            else if (event.text.unicode < 128) { // Regular character
+                // Limit world name length to prevent overflow
+                if (worldName.length() < 20) {
                     worldName += static_cast<char>(event.text.unicode);
                 }
             }
-            
             worldNameText.setString(worldName);
         }
     }
 }
 
 void MenuState::update(sf::Vector2f mousePos) {
+    // Update all buttons
     for (auto& button : buttons) {
         button.update(mousePos);
+    }
+    
+    // Update the slider if in options menu
+    if (currentState == GameState::OPTIONS) {
+        fpsSlider.update(mousePos);
     }
 }
 
 void MenuState::draw(sf::RenderWindow& window) {
-    // Draw background with a gradient effect if texture isn't available
-    if (backgroundTexture.getSize().x > 0) {
-        // Scale background to fill window
-        sf::Vector2u windowSize = window.getSize();
-        sf::Vector2u textureSize = backgroundTexture.getSize();
-        
-        float scaleX = static_cast<float>(windowSize.x) / textureSize.x;
-        float scaleY = static_cast<float>(windowSize.y) / textureSize.y;
-        
-        background.setScale(scaleX, scaleY);
-        window.draw(background);
-    } else {
-        // Create a gradient effect as fallback
-        sf::RectangleShape darkOverlay;
-        darkOverlay.setSize(sf::Vector2f(window.getSize().x, window.getSize().y));
-        darkOverlay.setPosition(0, 0);
-        
-        // Create gradient background with Minecraft-like colors
-        sf::RectangleShape gradientTop;
-        gradientTop.setSize(sf::Vector2f(window.getSize().x, window.getSize().y/2));
-        gradientTop.setPosition(0, 0);
-        gradientTop.setFillColor(sf::Color(70, 120, 200)); // Sky blue
-        
-        sf::RectangleShape gradientBottom;
-        gradientBottom.setSize(sf::Vector2f(window.getSize().x, window.getSize().y/2));
-        gradientBottom.setPosition(0, window.getSize().y/2);
-        gradientBottom.setFillColor(sf::Color(50, 90, 160)); // Darker blue
-        
-        // Create semi-transparent overlay for text contrast
-        darkOverlay.setFillColor(sf::Color(0, 0, 0, 120));
-        
-        window.draw(gradientTop);
-        window.draw(gradientBottom);
-        window.draw(darkOverlay);
-    }
+    // Draw the background
+    window.draw(background);
     
-    // Draw title with a slight shadow effect
-    sf::Text titleShadow = title;
-    titleShadow.setPosition(title.getPosition() + sf::Vector2f(3, 3));
-    titleShadow.setFillColor(sf::Color(0, 0, 0, 180));
-    window.draw(titleShadow);
-    
-    // Draw title
+    // Draw the title
     window.draw(title);
     
-    // Draw buttons
+    // Draw all buttons
     for (auto& button : buttons) {
         button.draw(window);
+    }
+    
+    // Draw the slider if in options menu
+    if (currentState == GameState::OPTIONS) {
+        fpsSlider.draw(window);
+        // Draw FPS label
+        sf::Text fpsLabel;
+        fpsLabel.setFont(font);
+        fpsLabel.setCharacterSize(24);
+        fpsLabel.setString("Max FPS:");
+        fpsLabel.setFillColor(sf::Color::White);
+        fpsLabel.setOutlineColor(sf::Color::Black);
+        fpsLabel.setOutlineThickness(1);
+        fpsLabel.setPosition(440, 280);
+        window.draw(fpsLabel);
     }
     
     // Draw world creation fields
@@ -370,7 +344,10 @@ void MenuState::draw(sf::RenderWindow& window) {
 }
 
 void MenuState::setOnStateChange(std::function<void(GameState)> callback) {
-    onStateChange = callback;
+    onStateChange = [this, callback](GameState newState) {
+        currentState = newState;
+        callback(newState);
+    };
 }
 
 void MenuState::setOnCreateWorld(std::function<void(const std::string&, GameMode, Difficulty)> callback) {
@@ -390,6 +367,11 @@ void MenuState::cycleGameMode() {
             gameMode = GameMode::SURVIVAL;
             break;
     }
+    
+    // Update the button text immediately after changing the game mode
+    if (currentState == GameState::WORLD_CREATION) {
+        modeButton.setText(getGameModeString());
+    }
 }
 
 void MenuState::cycleDifficulty() {
@@ -406,6 +388,11 @@ void MenuState::cycleDifficulty() {
         case Difficulty::HARD:
             difficulty = Difficulty::PEACEFUL;
             break;
+    }
+    
+    // Update the button text immediately after changing the difficulty
+    if (currentState == GameState::WORLD_CREATION) {
+        difficultyButton.setText(getDifficultyString());
     }
 }
 
