@@ -1,5 +1,5 @@
 @echo off
-echo ===== SFML Terrain Generator =====
+echo ===== SFML Minecraft with Main Menu =====
 echo.
 
 REM Check if SFML is installed
@@ -16,9 +16,6 @@ if not exist SFML\include\SFML (
 
 REM Create necessary directories
 if not exist obj mkdir obj
-if not exist obj\ui mkdir obj\ui
-if not exist obj\world mkdir obj\world
-if not exist obj\engine mkdir obj\engine
 if not exist bin mkdir bin
 if not exist bin\assets mkdir bin\assets
 if not exist bin\assets\textures mkdir bin\assets\textures
@@ -42,12 +39,11 @@ if exist kenney_voxel-pack (
 
 REM Compile source files
 echo Compiling project...
-g++ -Wall -Wextra -std=c++17 -O2 -I./SFML/include -I./src -c src/main.cpp -o obj/main.o
-g++ -Wall -Wextra -std=c++17 -O2 -I./SFML/include -I./src -c src/world/World.cpp -o obj/world/World.o
-g++ -Wall -Wextra -std=c++17 -O2 -I./SFML/include -I./src -c src/engine/Camera.cpp -o obj/engine/Camera.o
-g++ -Wall -Wextra -std=c++17 -O2 -I./SFML/include -I./src -c src/world/Chunk.cpp -o obj/world/Chunk.o
-g++ -Wall -Wextra -std=c++17 -O2 -I./SFML/include -I./src -c src/world/TileManager.cpp -o obj/world/TileManager.o
-g++ -Wall -Wextra -std=c++17 -O2 -I./SFML/include -I./src -c src/ui/MainMenu.cpp -o obj/ui/MainMenu.o
+g++ -Wall -Wextra -std=c++17 -O2 -I./SFML/include -c src/main.cpp -o obj/main.o
+g++ -Wall -Wextra -std=c++17 -O2 -I./SFML/include -c src/World.cpp -o obj/World.o
+g++ -Wall -Wextra -std=c++17 -O2 -I./SFML/include -c src/Camera.cpp -o obj/Camera.o
+g++ -Wall -Wextra -std=c++17 -O2 -I./SFML/include -c src/Chunk.cpp -o obj/Chunk.o
+g++ -Wall -Wextra -std=c++17 -O2 -I./SFML/include -c src/TileManager.cpp -o obj/TileManager.o
 
 if %ERRORLEVEL% NEQ 0 (
     echo.
@@ -58,7 +54,7 @@ if %ERRORLEVEL% NEQ 0 (
 )
 
 echo Linking...
-g++ obj/main.o obj/world/World.o obj/engine/Camera.o obj/world/Chunk.o obj/world/TileManager.o obj/ui/MainMenu.o -o bin/main.exe -L./SFML/lib -lsfml-graphics -lsfml-window -lsfml-system -static-libgcc -static-libstdc++
+g++ obj/main.o obj/World.o obj/Camera.o obj/Chunk.o obj/TileManager.o -o bin/main.exe -L./SFML/lib -lsfml-graphics -lsfml-window -lsfml-system -static-libgcc -static-libstdc++
 
 if %ERRORLEVEL% NEQ 0 (
     echo.
@@ -69,7 +65,10 @@ if %ERRORLEVEL% NEQ 0 (
 )
 
 echo.
-echo Running 2D Minecraft with main menu...
+echo Running 2D Minecraft chunked world generator...
+echo World is 1,000,000 blocks wide with 16-block chunks (only 7 chunks active at once).
+echo Added FPS counter to track performance.
+echo Press Space to generate new terrain, WASD/arrow keys to scroll, Escape to exit.
 echo.
 cd bin
 main.exe
