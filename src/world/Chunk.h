@@ -2,7 +2,7 @@
 
 #include <SFML/Graphics.hpp>
 #include <vector>
-#include "PerlinNoise.h"
+#include "../engine/PerlinNoise.h"
 #include "TileTypes.h"
 
 class Chunk {

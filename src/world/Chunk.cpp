@@ -17,7 +17,7 @@ Chunk::Chunk(int x, int width, int height, int tileSize,
     leavesTexture(leaves) {
     
     // Initialize the chunk with air
-    tiles.resize(chunkWidth, std::vector<TileType>(worldHeight, AIR));
+    tiles.resize(chunkWidth, std::vector<TileType>(worldHeight, TileType::AIR));
 }
 
 void Chunk::generate(PerlinNoise& terrainNoise, uint64_t seed, int worldOffset) {
@@ -49,20 +49,20 @@ void Chunk::generateTerrain(PerlinNoise& terrainNoise, uint64_t seed, int worldO
         int terrainHeight = baseHeight - hillHeight * heightValue;
         
         if (terrainHeight >= 0 && terrainHeight < worldHeight) {
-            tiles[x][terrainHeight] = GRASS;
+            tiles[x][terrainHeight] = TileType::GRASS;
             
             for (int dirt = 1; dirt <= dirtLayers; dirt++) {
                 int y = terrainHeight + dirt;
                 if (y < worldHeight) {
-                    tiles[x][y] = DIRT;
+                    tiles[x][y] = TileType::DIRT;
                 }
             }
             
             for (int y = terrainHeight + dirtLayers + 1; y < worldHeight; y++) {
                 if (stoneDist(rng) == 0) {
-                    tiles[x][y] = STONE;
+                    tiles[x][y] = TileType::STONE;
                 } else {
-                    tiles[x][y] = GRAVELED_STONE;
+                    tiles[x][y] = TileType::GRAVELED_STONE;
                 }
             }
         }
@@ -70,7 +70,7 @@ void Chunk::generateTerrain(PerlinNoise& terrainNoise, uint64_t seed, int worldO
     
     // Add bedrock at the bottom
     for (int x = 0; x < chunkWidth; x++) {
-        tiles[x][worldHeight - 1] = BEDROCK;
+        tiles[x][worldHeight - 1] = TileType::BEDROCK;
     }
 }
 
@@ -86,13 +86,13 @@ void Chunk::generateTrees(uint64_t seed, int /*worldOffset*/) {
         if (treeDist(rng) > 92) {
             // Find the ground level at this x position
             for (int y = 0; y < worldHeight; y++) {
-                if (tiles[x][y] == GRASS) {
+                if (tiles[x][y] == TileType::GRASS) {
                     // Place a tree at this position if there's enough room above
                     int treeHeight = heightDist(rng);
                     if (y - treeHeight > 4) { // Ensure enough space for trunk and leaves
                         // Place trunk sections (vertical column)
                         for (int i = 1; i <= treeHeight; i++) {
-                            tiles[x][y-i] = TRUNK;
+                            tiles[x][y-i] = TileType::TRUNK;
                         }
                         
                         // The top position of the trunk
@@ -107,8 +107,8 @@ void Chunk::generateTrees(uint64_t seed, int /*worldOffset*/) {
                                 // Skip some corner blocks for more natural shape
                                 if ((lx == x - 2 || lx == x + 2) && treeDist(rng) < 40) continue;
                                 
-                                if (tiles[lx][ly] == AIR) {
-                                    tiles[lx][ly] = LEAVES;
+                                if (tiles[lx][ly] == TileType::AIR) {
+                                    tiles[lx][ly] = TileType::LEAVES;
                                 }
                             }
                         }
@@ -123,8 +123,8 @@ void Chunk::generateTrees(uint64_t seed, int /*worldOffset*/) {
                             // Make corners a bit more sparse
                             if ((lx == x - 2 || lx == x + 2) && (treeDist(rng) < 30)) continue;
                             
-                            if (tiles[lx][ly] == AIR) {
-                                tiles[lx][ly] = LEAVES;
+                            if (tiles[lx][ly] == TileType::AIR) {
+                                tiles[lx][ly] = TileType::LEAVES;
                             }
                         }
                         
@@ -135,14 +135,14 @@ void Chunk::generateTrees(uint64_t seed, int /*worldOffset*/) {
                             int ly = topY - 3;
                             if (ly < 0 || ly >= worldHeight) continue;
                             
-                            if (tiles[lx][ly] == AIR) {
-                                tiles[lx][ly] = LEAVES;
+                            if (tiles[lx][ly] == TileType::AIR) {
+                                tiles[lx][ly] = TileType::LEAVES;
                             }
                         }
                         
                         // Top leaf
                         if (topY - 4 >= 0) {
-                            tiles[x][topY - 4] = LEAVES;
+                            tiles[x][topY - 4] = TileType::LEAVES;
                         }
                     }
                     break; // Stop after finding the ground level
@@ -162,29 +162,29 @@ void Chunk::buildSpriteArray() {
     // Create a sprite for each tile
     for (int x = 0; x < chunkWidth; x++) {
         for (int y = 0; y < worldHeight; y++) {
-            if (tiles[x][y] != AIR) {
+            if (tiles[x][y] != TileType::AIR) {
                 sf::Sprite sprite;
                 
                 switch (tiles[x][y]) {
-                    case GRASS:
+                    case TileType::GRASS:
                         sprite.setTexture(*grassTexture);
                         break;
-                    case DIRT:
+                    case TileType::DIRT:
                         sprite.setTexture(*dirtTexture);
                         break;
-                    case STONE:
+                    case TileType::STONE:
                         sprite.setTexture(*stoneTexture);
                         break;
-                    case GRAVELED_STONE:
+                    case TileType::GRAVELED_STONE:
                         sprite.setTexture(*graveledStoneTexture);
                         break;
-                    case BEDROCK:
+                    case TileType::BEDROCK:
                         sprite.setTexture(*stoneTexture);
                         break;
-                    case TRUNK:
+                    case TileType::TRUNK:
                         sprite.setTexture(*trunkTexture);
                         break;
-                    case LEAVES:
+                    case TileType::LEAVES:
                         sprite.setTexture(*leavesTexture);
                         break;
                     default:

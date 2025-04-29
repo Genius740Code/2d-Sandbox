@@ -68,12 +68,12 @@ void World::updateActiveChunks(int centerChunkX) {
                 CHUNK_WIDTH, 
                 worldHeight, 
                 tileSize,
-                tileManager.getTexture(GRASS), 
-                tileManager.getTexture(DIRT), 
-                tileManager.getTexture(STONE), 
-                tileManager.getTexture(GRAVELED_STONE),
-                tileManager.getTexture(TRUNK), 
-                tileManager.getTexture(LEAVES)
+                tileManager.getTexture(TileType::GRASS),
+                tileManager.getTexture(TileType::DIRT),
+                tileManager.getTexture(TileType::STONE),
+                tileManager.getTexture(TileType::GRAVELED_STONE),
+                tileManager.getTexture(TileType::TRUNK),
+                tileManager.getTexture(TileType::LEAVES)
             );
             
             // Generate terrain for this chunk

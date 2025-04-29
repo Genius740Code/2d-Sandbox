@@ -7,9 +7,9 @@
 #include <string>
 #include <sstream>  // Added for string formatting
 
-#include "PerlinNoise.h"
-#include "World.h"
-#include "Camera.h"
+#include "engine/PerlinNoise.h"
+#include "world/World.h"
+#include "engine/Camera.h"
 #include "ui/MenuState.h"
 
 int main() {
@@ -27,6 +27,7 @@ int main() {
     GameMode gameMode = GameMode::SURVIVAL;
     Difficulty difficulty = Difficulty::NORMAL;
     std::string worldName = "New World";
+    int maxFps = 60;
     
     // Create menu system
     MenuState menuState;
@@ -34,18 +35,6 @@ int main() {
         std::cerr << "Failed to initialize menu system!" << std::endl;
         return 1;
     }
-    
-    // Set up menu callbacks
-    menuState.setOnStateChange([&currentState](GameState newState) {
-        currentState = newState;
-    });
-    
-    menuState.setOnCreateWorld([&worldName, &gameMode, &difficulty](
-        const std::string& name, GameMode mode, Difficulty diff) {
-        worldName = name;
-        gameMode = mode;
-        difficulty = diff;
-    });
     
     // Create a big seed value
     uint64_t seedMin = static_cast<uint64_t>(1) << 50;
@@ -63,6 +52,28 @@ int main() {
     // Create camera
     Camera camera(windowWidth, windowHeight, world.getWorldWidth(), world.getWorldHeight());
     camera.setCreativeMode(gameMode == GameMode::CREATIVE);
+    
+    // Set up menu callbacks
+    menuState.setOnStateChange([&currentState](GameState newState) {
+        currentState = newState;
+    });
+    
+    menuState.setOnCreateWorld([&worldName, &gameMode, &difficulty, &camera](
+        const std::string& name, GameMode mode, Difficulty diff) {
+        worldName = name;
+        gameMode = mode;
+        difficulty = diff;
+        camera.setCreativeMode(gameMode == GameMode::CREATIVE);
+    });
+    
+    menuState.setOnMaxFpsChange([&maxFps, &window](int fps) {
+        maxFps = fps;
+        if (maxFps == 0) {
+            window.setFramerateLimit(0);
+        } else {
+            window.setFramerateLimit(maxFps);
+        }
+    });
     
     // Font for in-game UI
     sf::Font font;
@@ -133,6 +144,9 @@ int main() {
                         menuState.setupMainMenu();
                     } else if (currentState == GameState::MAIN_MENU) {
                         window.close();
+                    } else if (currentState == GameState::OPTIONS) {
+                        currentState = GameState::MAIN_MENU;
+                        menuState.setupMainMenu();
                     }
                 }
                 

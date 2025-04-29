@@ -153,7 +153,8 @@ std::vector<std::vector<float>> PerlinNoise::generateNoiseMap(int width, int hei
         return noise / maxValue;
     };
     
-    #pragma omp parallel for collapse(2)
+    // Multi-threaded version - disabled to avoid compiler warnings
+    // #pragma omp parallel for collapse(2)
     for (int y = 0; y < height; ++y) {
         for (int x = 0; x < width; ++x) {
             noiseMap[x][y] = sampleNoise(static_cast<float>(x), static_cast<float>(y));

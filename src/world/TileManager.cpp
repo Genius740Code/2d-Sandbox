@@ -6,19 +6,19 @@ TileManager::TileManager(const std::string& path) : texturePath(path) {
 
 void TileManager::initializeTileFilenames() {
     // Map tile types to their respective filenames
-    tileFilenames[GRASS] = "dirt_grass.png";
-    tileFilenames[DIRT] = "dirt.png";
-    tileFilenames[STONE] = "stone.png";
-    tileFilenames[BEDROCK] = "stone_coal.png"; // Using coal stone as bedrock
-    tileFilenames[TRUNK] = "trunk_side.png";
-    tileFilenames[LEAVES] = "leaves_transparent.png";
-    tileFilenames[SNOW_GRASS] = "dirt_snow.png";
-    tileFilenames[SNOW] = "snow.png";
-    tileFilenames[COAL_ORE] = "stone_coal.png";
-    tileFilenames[IRON_ORE] = "stone_silver.png"; // Using silver for iron
-    tileFilenames[GOLD_ORE] = "stone_gold.png";
-    tileFilenames[DIAMOND_ORE] = "stone_diamond.png";
-    tileFilenames[GRAVELED_STONE] = "gravel_stone.png";
+    tileFilenames[TileType::GRASS] = "dirt_grass.png";
+    tileFilenames[TileType::DIRT] = "dirt.png";
+    tileFilenames[TileType::STONE] = "stone.png";
+    tileFilenames[TileType::BEDROCK] = "stone_coal.png"; // Using coal stone as bedrock
+    tileFilenames[TileType::TRUNK] = "trunk_side.png";
+    tileFilenames[TileType::LEAVES] = "leaves_transparent.png";
+    tileFilenames[TileType::SNOW_GRASS] = "dirt_snow.png";
+    tileFilenames[TileType::SNOW] = "snow.png";
+    tileFilenames[TileType::COAL_ORE] = "stone_coal.png";
+    tileFilenames[TileType::IRON_ORE] = "stone_silver.png"; // Using silver for iron
+    tileFilenames[TileType::GOLD_ORE] = "stone_gold.png";
+    tileFilenames[TileType::DIAMOND_ORE] = "stone_diamond.png";
+    tileFilenames[TileType::GRAVELED_STONE] = "gravel_stone.png";
 }
 
 bool TileManager::loadTextures() {

@@ -5,13 +5,16 @@ MenuState::MenuState() :
     worldName("New World"),
     gameMode(GameMode::SURVIVAL), 
     difficulty(Difficulty::NORMAL),
+    maxFps(60),
     isInputActive(false),
     modeButton(&font, "SURVIVAL", sf::Vector2f(200, 50), sf::Vector2f(0, 0)),
-    difficultyButton(&font, "NORMAL", sf::Vector2f(200, 50), sf::Vector2f(0, 0))
+    difficultyButton(&font, "NORMAL", sf::Vector2f(200, 50), sf::Vector2f(0, 0)),
+    fpsButton(&font, "60 FPS", sf::Vector2f(200, 50), sf::Vector2f(0, 0))
 {
     // Set defaults for callbacks
     onStateChange = [](GameState) {};
     onCreateWorld = [](const std::string&, GameMode, Difficulty) {};
+    onMaxFpsChange = [](int) {};
 }
 
 bool MenuState::initialize() {
@@ -73,7 +76,10 @@ void MenuState::setupMainMenu() {
     // Add options button
     Button optionsButton(&font, "Options", buttonSize, sf::Vector2f(640 - buttonSize.x / 2, 360));
     optionsButton.setColors(buttonIdle, buttonHover, buttonActive, textColor);
-    // Currently no functionality, could be expanded later
+    optionsButton.setOnClick([this]() {
+        setupOptions();
+        onStateChange(GameState::OPTIONS);
+    });
     
     Button exitButton(&font, "Exit Game", buttonSize, sf::Vector2f(640 - buttonSize.x / 2, 440));
     exitButton.setColors(
@@ -188,6 +194,52 @@ void MenuState::setupWorldCreation() {
     buttons.push_back(modeButton);
     buttons.push_back(difficultyButton);
     buttons.push_back(createButton);
+    buttons.push_back(backButton);
+}
+
+void MenuState::setupOptions() {
+    buttons.clear();
+    
+    title.setString("Options");
+    title.setOrigin(title.getLocalBounds().width / 2, title.getLocalBounds().height / 2);
+    title.setPosition(640, 100);
+    
+    sf::Vector2f buttonSize(220, 50);
+    sf::Color buttonIdle(56, 56, 56, 230);
+    sf::Color buttonHover(90, 90, 90, 230);
+    sf::Color buttonActive(35, 35, 35, 230);
+    sf::Color textColor(255, 255, 255);
+    
+    sf::Text fpsLabel;
+    fpsLabel.setFont(font);
+    fpsLabel.setCharacterSize(24);
+    fpsLabel.setString("Max FPS:");
+    fpsLabel.setFillColor(sf::Color::White);
+    fpsLabel.setOutlineColor(sf::Color::Black);
+    fpsLabel.setOutlineThickness(1);
+    fpsLabel.setPosition(440, 280);
+    
+    fpsButton = Button(&font, getFpsString(), buttonSize, sf::Vector2f(640, 280));
+    fpsButton.setColors(buttonIdle, buttonHover, buttonActive, textColor);
+    fpsButton.setOnClick([this]() {
+        cycleFps();
+        fpsButton.setText(getFpsString());
+        onMaxFpsChange(maxFps);
+    });
+    
+    Button backButton(&font, "Back", sf::Vector2f(120, 40), sf::Vector2f(100, 650));
+    backButton.setColors(
+        sf::Color(180, 60, 60, 230),
+        sf::Color(220, 80, 80, 230),
+        sf::Color(150, 40, 40, 230),
+        textColor
+    );
+    backButton.setOnClick([this]() {
+        setupMainMenu();
+        onStateChange(GameState::MAIN_MENU);
+    });
+    
+    buttons.push_back(fpsButton);
     buttons.push_back(backButton);
 }
 
@@ -357,6 +409,17 @@ void MenuState::cycleDifficulty() {
     }
 }
 
+void MenuState::cycleFps() {
+    switch(maxFps) {
+        case 30: maxFps = 60; break;
+        case 60: maxFps = 120; break;
+        case 120: maxFps = 144; break;
+        case 144: maxFps = 240; break;
+        case 240: maxFps = 0; break;  // 0 means unlimited
+        default: maxFps = 30; break;
+    }
+}
+
 std::string MenuState::getGameModeString() const {
     switch (gameMode) {
         case GameMode::SURVIVAL: return "SURVIVAL";
@@ -374,4 +437,15 @@ std::string MenuState::getDifficultyString() const {
         case Difficulty::HARD: return "HARD";
         default: return "UNKNOWN";
     }
+}
+
+std::string MenuState::getFpsString() const {
+    if (maxFps == 0) {
+        return "Unlimited FPS";
+    }
+    return std::to_string(maxFps) + " FPS";
+}
+
+void MenuState::setOnMaxFpsChange(std::function<void(int)> callback) {
+    onMaxFpsChange = callback;
 } 

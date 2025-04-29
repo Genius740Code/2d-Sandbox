@@ -5,7 +5,7 @@
 #include <map>
 #include <iostream>
 #include <cstdint>
-#include "PerlinNoise.h"
+#include "../engine/PerlinNoise.h"
 #include "Chunk.h"
 #include "TileManager.h"
 
