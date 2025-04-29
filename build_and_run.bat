@@ -1,5 +1,5 @@
 @echo off
-echo ===== SFML Terrain Generator =====
+echo ===== SFML Minecraft with Main Menu =====
 echo.
 
 REM Check if SFML is installed
@@ -16,6 +16,7 @@ if not exist SFML\include\SFML (
 
 REM Create necessary directories
 if not exist obj mkdir obj
+if not exist obj\ui mkdir obj\ui
 if not exist bin mkdir bin
 if not exist bin\assets mkdir bin\assets
 if not exist bin\assets\textures mkdir bin\assets\textures
@@ -44,6 +45,8 @@ g++ -Wall -Wextra -std=c++17 -O2 -I./SFML/include -c src/World.cpp -o obj/World.
 g++ -Wall -Wextra -std=c++17 -O2 -I./SFML/include -c src/Camera.cpp -o obj/Camera.o
 g++ -Wall -Wextra -std=c++17 -O2 -I./SFML/include -c src/Chunk.cpp -o obj/Chunk.o
 g++ -Wall -Wextra -std=c++17 -O2 -I./SFML/include -c src/TileManager.cpp -o obj/TileManager.o
+g++ -Wall -Wextra -std=c++17 -O2 -I./SFML/include -c src/ui/Button.cpp -o obj/ui/Button.o
+g++ -Wall -Wextra -std=c++17 -O2 -I./SFML/include -c src/ui/MenuState.cpp -o obj/ui/MenuState.o
 
 if %ERRORLEVEL% NEQ 0 (
     echo.
@@ -54,7 +57,7 @@ if %ERRORLEVEL% NEQ 0 (
 )
 
 echo Linking...
-g++ obj/main.o obj/World.o obj/Camera.o obj/Chunk.o obj/TileManager.o -o bin/main.exe -L./SFML/lib -lsfml-graphics -lsfml-window -lsfml-system -static-libgcc -static-libstdc++
+g++ obj/main.o obj/World.o obj/Camera.o obj/Chunk.o obj/TileManager.o obj/ui/Button.o obj/ui/MenuState.o -o bin/main.exe -L./SFML/lib -lsfml-graphics -lsfml-window -lsfml-system -static-libgcc -static-libstdc++
 
 if %ERRORLEVEL% NEQ 0 (
     echo.
@@ -65,10 +68,7 @@ if %ERRORLEVEL% NEQ 0 (
 )
 
 echo.
-echo Running 2D Minecraft chunked world generator...
-echo World is 1,000,000 blocks wide with 16-block chunks (only 7 chunks active at once).
-echo Added FPS counter to track performance.
-echo Press Space to generate new terrain, WASD/arrow keys to scroll, Escape to exit.
+echo Running 2D Minecraft...
 echo.
 cd bin
 main.exe
