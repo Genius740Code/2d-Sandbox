@@ -1,4 +1,5 @@
 #include "MenuState.h"
+#include <iostream>
 
 Slider::Slider(sf::Font* font, float min, float max, float initial, 
                sf::Vector2f size, sf::Vector2f position) 
@@ -18,6 +19,10 @@ Slider::Slider(sf::Font* font, float min, float max, float initial,
     
     // Set initial handle position based on value
     float percent = (initial - min) / (max - min);
+    // Special case for unlimited (0)
+    if (initial == 0) {
+        percent = 1.0f; // Far right for unlimited
+    }
     float handleX = position.x + percent * (size.x - handleWidth);
     handle.setPosition(sf::Vector2f(handleX, position.y - 5.0f));
     handle.setFillColor(sf::Color(180, 180, 180, 230));
@@ -39,6 +44,10 @@ void Slider::setPosition(sf::Vector2f position) {
     
     // Calculate handle's x position based on current value
     float percent = (currentValue - minValue) / (maxValue - minValue);
+    // Special case for unlimited (0)
+    if (currentValue == 0) {
+        percent = 1.0f; // Far right for unlimited
+    }
     float handleX = position.x + percent * (track.getSize().x - handle.getSize().x);
     handle.setPosition(sf::Vector2f(handleX, position.y - 5.0f));
     
@@ -46,11 +55,19 @@ void Slider::setPosition(sf::Vector2f position) {
 }
 
 void Slider::setValue(float value) {
-    // Clamp value to range
-    currentValue = std::max(minValue, std::min(maxValue, value));
+    // Clamp value to range, with special case for unlimited (0)
+    if (value != 0) {
+        currentValue = std::max(minValue, std::min(maxValue, value));
+    } else {
+        currentValue = 0; // Unlimited FPS
+    }
     
     // Update handle position
     float percent = (currentValue - minValue) / (maxValue - minValue);
+    // Special case for unlimited (0)
+    if (currentValue == 0) {
+        percent = 1.0f; // Far right for unlimited
+    }
     float handleX = track.getPosition().x + percent * (track.getSize().x - handle.getSize().x);
     handle.setPosition(sf::Vector2f(handleX, handle.getPosition().y));
     
@@ -72,9 +89,9 @@ void Slider::setOnValueChange(std::function<void(float)> callback) {
 
 void Slider::updateText() {
     if (currentValue == 0) {
-        valueText.setString("Unlimited FPS");
+        valueText.setString("Unlimited");
     } else {
-        valueText.setString(std::to_string(static_cast<int>(currentValue)) + " FPS");
+        valueText.setString(std::to_string(static_cast<int>(currentValue)));
     }
 }
 
@@ -96,25 +113,35 @@ void Slider::update(sf::Vector2f mousePos) {
         // Update handle position
         handle.setPosition(sf::Vector2f(handleX, handle.getPosition().y));
         
-        // Calculate and set the new value
+        // Calculate percent of the track
         float percent = (handleX - trackStart) / (trackEnd - trackStart);
-        float newValue = minValue + percent * (maxValue - minValue);
         
-        // Snap to preset values: 30, 60, 120, 144, 240, 0 (unlimited)
-        float snapValues[] = {30, 60, 120, 144, 240, 0};
-        float closestValue = snapValues[0];
-        float minDiff = std::abs(newValue - snapValues[0]);
+        // Calculate the new value
+        float newValue;
         
-        for (int i = 1; i < 6; i++) {
-            float diff = std::abs(newValue - snapValues[i]);
-            if (diff < minDiff) {
-                minDiff = diff;
-                closestValue = snapValues[i];
+        // Check if close to max (right side) and make it unlimited (0)
+        if (percent > 0.95) {
+            newValue = 0; // 0 represents unlimited
+        } else {
+            // Otherwise calculate based on percentage
+            newValue = minValue + percent * (maxValue - minValue);
+            
+            // Snap to preset values: 30, 60, 120, 144, 240
+            float snapValues[] = {30, 60, 120, 144, 240};
+            float closestValue = snapValues[0];
+            float minDiff = std::abs(newValue - snapValues[0]);
+            
+            for (int i = 1; i < 5; i++) {
+                float diff = std::abs(newValue - snapValues[i]);
+                if (diff < minDiff) {
+                    minDiff = diff;
+                    closestValue = snapValues[i];
+                }
             }
-        }
-        
-        if (minDiff < (maxValue - minValue) / 15.0f) { // Snap threshold
-            newValue = closestValue;
+            
+            if (minDiff < (maxValue - minValue) / 15.0f) { // Snap threshold
+                newValue = closestValue;
+            }
         }
         
         // Only update if value changed
@@ -137,11 +164,19 @@ void Slider::handleEvent(const sf::Event& event, sf::Vector2f mousePos) {
                 
                 handle.setPosition(sf::Vector2f(handleX, handle.getPosition().y));
                 
-                // Calculate and set the new value
+                // Calculate percent of the track
                 float percent = (handleX - trackStart) / (trackEnd - trackStart);
-                float newValue = minValue + percent * (maxValue - minValue);
-                setValue(newValue);
                 
+                // Check if close to max (right side) and make it unlimited (0)
+                float newValue;
+                if (percent > 0.95) {
+                    newValue = 0; // 0 represents unlimited
+                } else {
+                    // Otherwise calculate based on percentage
+                    newValue = minValue + percent * (maxValue - minValue);
+                }
+                
+                setValue(newValue);
                 isDragging = true;
             }
         }
@@ -155,6 +190,25 @@ void Slider::handleEvent(const sf::Event& event, sf::Vector2f mousePos) {
 
 void Slider::draw(sf::RenderWindow& window) {
     window.draw(track);
+    
+    // Draw value labels
+    sf::Text minLabel;
+    minLabel.setFont(*font);
+    minLabel.setCharacterSize(14);
+    minLabel.setFillColor(sf::Color(200, 200, 200));
+    minLabel.setString("30");
+    minLabel.setPosition(track.getPosition().x, track.getPosition().y + track.getSize().y + 5);
+    
+    sf::Text maxLabel;
+    maxLabel.setFont(*font);
+    maxLabel.setCharacterSize(14);
+    maxLabel.setFillColor(sf::Color(200, 200, 200));
+    maxLabel.setString("Unlimited");
+    maxLabel.setPosition(track.getPosition().x + track.getSize().x - maxLabel.getLocalBounds().width, 
+                         track.getPosition().y + track.getSize().y + 5);
+    
+    window.draw(minLabel);
+    window.draw(maxLabel);
     window.draw(handle);
     window.draw(valueText);
 } 

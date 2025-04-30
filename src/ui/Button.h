@@ -16,6 +16,8 @@ private:
     
     bool isHovered;
     bool isActive;
+    bool hasTexture;
+    sf::Sprite sprite;
     
     std::function<void()> onClick;
 
@@ -26,6 +28,9 @@ public:
     void setPosition(sf::Vector2f position);
     void setOnClick(std::function<void()> callback);
     void setText(const std::string& newText);
+    void setTexture(const sf::Texture& texture);
+    void setOutlineColor(sf::Color color);
+    void setOutlineThickness(float thickness);
     
     bool contains(sf::Vector2f point) const;
     void update(sf::Vector2f mousePos);

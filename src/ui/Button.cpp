@@ -1,7 +1,7 @@
 #include "Button.h"
 
 Button::Button(sf::Font* font, const std::string& buttonText, sf::Vector2f size, sf::Vector2f position) 
-    : font(font), isHovered(false), isActive(false) {
+    : font(font), isHovered(false), isActive(false), hasTexture(false) {
     
     // Configure the button shape
     shape.setSize(size);
@@ -45,6 +45,10 @@ void Button::setPosition(sf::Vector2f position) {
         position.x + shape.getSize().x / 2, 
         position.y + shape.getSize().y / 2 - text.getCharacterSize() / 3
     );
+    
+    if (hasTexture) {
+        sprite.setPosition(position);
+    }
 }
 
 void Button::setOnClick(std::function<void()> callback) {
@@ -62,6 +66,30 @@ void Button::setText(const std::string& newText) {
     sf::Vector2f buttonPos = shape.getPosition();
     sf::Vector2f buttonSize = shape.getSize();
     text.setPosition(buttonPos.x + buttonSize.x / 2.0f, buttonPos.y + buttonSize.y / 2.0f);
+}
+
+void Button::setTexture(const sf::Texture& texture) {
+    sprite.setTexture(texture);
+    hasTexture = true;
+    
+    // Scale the sprite to fit the button
+    sf::Vector2f buttonSize = shape.getSize();
+    sf::Vector2u textureSize = texture.getSize();
+    
+    float scaleX = buttonSize.x / textureSize.x;
+    float scaleY = buttonSize.y / textureSize.y;
+    sprite.setScale(scaleX, scaleY);
+    
+    // Position the sprite
+    sprite.setPosition(shape.getPosition());
+}
+
+void Button::setOutlineColor(sf::Color color) {
+    shape.setOutlineColor(color);
+}
+
+void Button::setOutlineThickness(float thickness) {
+    shape.setOutlineThickness(thickness);
 }
 
 bool Button::contains(sf::Vector2f point) const {
@@ -99,6 +127,9 @@ void Button::handleEvent(const sf::Event& event, sf::Vector2f mousePos) {
 
 void Button::draw(sf::RenderWindow& window) {
     window.draw(shape);
+    if (hasTexture) {
+        window.draw(sprite);
+    }
     window.draw(text);
 }
 

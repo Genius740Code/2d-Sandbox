@@ -5,6 +5,7 @@
 #include <memory>
 #include <functional>
 #include "Button.h"
+#include "../world/TileTypes.h"
 
 // Slider class for UI controls like FPS
 class Slider {
@@ -75,6 +76,7 @@ private:
     
     // Options settings
     int maxFps;
+    TileType menuBackgroundBlock; // Background block for menu
     
     // Current game state
     GameState currentState;
@@ -92,6 +94,10 @@ private:
     Button difficultyButton;
     Button fpsButton;
     Slider fpsSlider;
+    
+    // Block selection for menu background
+    std::vector<Button> blockButtons;
+    sf::Text backgroundBlockLabel;
     
     // Callback for state changes
     std::function<void(GameState)> onStateChange;
@@ -118,12 +124,17 @@ public:
     void cycleDifficulty();
     void cycleFps();
     
+    void cycleBackgroundBlock();
     std::string getGameModeString() const;
     std::string getDifficultyString() const;
     std::string getFpsString() const;
+    std::string getBackgroundBlockString() const;
     
     GameMode getGameMode() const { return gameMode; }
     Difficulty getDifficulty() const { return difficulty; }
     std::string getWorldName() const { return worldName; }
     int getMaxFps() const { return maxFps; }
+    TileType getMenuBackgroundBlock() const { return menuBackgroundBlock; }
+    void setMenuBackgroundBlock(TileType type);
+    void updateMenuBackground();
 }; 

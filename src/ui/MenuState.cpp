@@ -1,17 +1,19 @@
 #include "MenuState.h"
 #include <iostream>
+#include "../world/TileManager.h"
 
 MenuState::MenuState() : 
     worldName("New World"),
     gameMode(GameMode::SURVIVAL), 
     difficulty(Difficulty::NORMAL),
     maxFps(60),
+    menuBackgroundBlock(TileType::DIRT),
     currentState(GameState::MAIN_MENU),
     isInputActive(false),
     modeButton(&font, "SURVIVAL", sf::Vector2f(200, 50), sf::Vector2f(0, 0)),
     difficultyButton(&font, "NORMAL", sf::Vector2f(200, 50), sf::Vector2f(0, 0)),
     fpsButton(&font, "60 FPS", sf::Vector2f(200, 50), sf::Vector2f(0, 0)),
-    fpsSlider(&font, 0, 240, 60, sf::Vector2f(200, 20), sf::Vector2f(0, 0))
+    fpsSlider(&font, 30, 240, 60, sf::Vector2f(200, 20), sf::Vector2f(0, 0))
 {
     // Set defaults for callbacks
     onStateChange = [](GameState) {};
@@ -26,23 +28,8 @@ bool MenuState::initialize() {
         return false;
     }
     
-    // Load background texture
-    if (!backgroundTexture.loadFromFile("assets/textures/menu_background.png")) {
-        // If specific menu background doesn't exist, try to use another texture
-        if (!backgroundTexture.loadFromFile("bin/assets/textures/brick_grey.png")) {
-            std::cerr << "Failed to load background texture!" << std::endl;
-            // Continue anyway, we'll use a solid color as fallback
-        }
-    }
-    
-    // Setup background
-    background.setTexture(backgroundTexture, true);
-    
-    // Scale the background to cover the entire window
-    background.setScale(
-        1280.0f / backgroundTexture.getSize().x,
-        720.0f / backgroundTexture.getSize().y
-    );
+    // Load background texture based on selected block
+    updateMenuBackground();
     
     // Set up title with Minecraft-like styling
     title.setFont(font);
@@ -210,6 +197,7 @@ void MenuState::setupWorldCreation() {
 
 void MenuState::setupOptions() {
     buttons.clear();
+    blockButtons.clear();
     currentState = GameState::OPTIONS;
     
     title.setString("Options");
@@ -222,6 +210,7 @@ void MenuState::setupOptions() {
     sf::Color buttonActive(35, 35, 35, 230);
     sf::Color textColor(255, 255, 255);
     
+    // FPS settings
     sf::Text fpsLabel;
     fpsLabel.setFont(font);
     fpsLabel.setCharacterSize(24);
@@ -229,14 +218,100 @@ void MenuState::setupOptions() {
     fpsLabel.setFillColor(sf::Color::White);
     fpsLabel.setOutlineColor(sf::Color::Black);
     fpsLabel.setOutlineThickness(1);
-    fpsLabel.setPosition(440, 280);
+    fpsLabel.setPosition(440, 200);
     
-    // Remove fpsButton and replace with slider
-    fpsSlider = Slider(&font, 0, 240, maxFps, sf::Vector2f(200, 20), sf::Vector2f(640, 290));
+    // FPS slider
+    fpsSlider = Slider(&font, 30, 240, maxFps, sf::Vector2f(200, 20), sf::Vector2f(640, 210));
     fpsSlider.setOnValueChange([this](float value) {
         maxFps = static_cast<int>(value);
+        // Handle unlimited FPS
+        if (maxFps >= 240) {
+            maxFps = 0; // 0 means unlimited
+        }
         onMaxFpsChange(maxFps);
     });
+    
+    // Background color selection
+    backgroundBlockLabel.setFont(font);
+    backgroundBlockLabel.setCharacterSize(24);
+    backgroundBlockLabel.setString("Menu Background:");
+    backgroundBlockLabel.setFillColor(sf::Color::White);
+    backgroundBlockLabel.setOutlineColor(sf::Color::Black);
+    backgroundBlockLabel.setOutlineThickness(1);
+    backgroundBlockLabel.setPosition(440, 290);
+    
+    // Create color buttons
+    sf::Vector2f blockButtonSize(64, 64);
+    
+    // Define colors for different blocks
+    std::vector<sf::Color> blockColors = {
+        sf::Color(150, 75, 0),       // DIRT
+        sf::Color(34, 139, 34),      // GRASS
+        sf::Color(128, 128, 128),    // STONE
+        sf::Color(165, 42, 42),      // BRICK
+        sf::Color(255, 250, 250),    // SNOW
+        sf::Color(139, 69, 19),      // TRUNK
+        sf::Color(0, 128, 0),        // LEAVES
+        sf::Color(194, 178, 128)     // SAND
+    };
+    
+    std::vector<std::string> blockNames = {
+        "Dirt", "Grass", "Stone", "Brick", 
+        "Snow", "Wood", "Leaves", "Sand"
+    };
+    
+    // Create buttons for each color
+    float startX = 440;
+    float startY = 330;
+    int col = 0;
+    int row = 0;
+    
+    for (size_t i = 0; i < blockColors.size(); i++) {
+        // Create button with color
+        Button blockButton(&font, "", blockButtonSize, sf::Vector2f(startX + col * 80, startY + row * 90));
+        
+        // Set the background color instead of texture
+        blockButton.setColors(
+            blockColors[i],
+            sf::Color(blockColors[i].r + 40, blockColors[i].g + 40, blockColors[i].b + 40),
+            sf::Color(blockColors[i].r - 40, blockColors[i].g - 40, blockColors[i].b - 40),
+            sf::Color::White
+        );
+        
+        // Add label with block name
+        sf::Text* label = new sf::Text();
+        label->setFont(font);
+        label->setCharacterSize(14);
+        label->setString(blockNames[i]);
+        label->setFillColor(sf::Color::White);
+        label->setOutlineColor(sf::Color::Black);
+        label->setOutlineThickness(1);
+        
+        // Center the text under the button
+        float textWidth = label->getLocalBounds().width;
+        label->setPosition(startX + col * 80 + (blockButtonSize.x - textWidth) / 2, startY + row * 90 + blockButtonSize.y + 5);
+        
+        // Highlight current selection
+        TileType currentType = static_cast<TileType>(i + 1); // Offset by 1 since AIR is 0
+        if (currentType == menuBackgroundBlock) {
+            blockButton.setOutlineColor(sf::Color::Yellow);
+            blockButton.setOutlineThickness(3);
+        }
+        
+        // Set button click handler
+        blockButton.setOnClick([this, currentType]() {
+            setMenuBackgroundBlock(currentType);
+        });
+        
+        blockButtons.push_back(blockButton);
+        
+        // Update grid position
+        col++;
+        if (col >= 4) {
+            col = 0;
+            row++;
+        }
+    }
     
     Button backButton(&font, "Back", sf::Vector2f(120, 40), sf::Vector2f(100, 650));
     backButton.setColors(
@@ -263,9 +338,14 @@ void MenuState::handleEvent(const sf::Event& event, sf::RenderWindow& window) {
         button.handleEvent(event, mousePos);
     }
     
-    // Handle slider interactions if in options menu
+    // Handle options menu specific controls
     if (currentState == GameState::OPTIONS) {
         fpsSlider.handleEvent(event, mousePos);
+        
+        // Handle block selection buttons
+        for (auto& button : blockButtons) {
+            button.handleEvent(event, mousePos);
+        }
     }
     
     // Handle text input for world name
@@ -309,6 +389,11 @@ void MenuState::update(sf::Vector2f mousePos) {
     // Update the slider if in options menu
     if (currentState == GameState::OPTIONS) {
         fpsSlider.update(mousePos);
+        
+        // Update block selection buttons
+        for (auto& button : blockButtons) {
+            button.update(mousePos);
+        }
     }
 }
 
@@ -324,10 +409,10 @@ void MenuState::draw(sf::RenderWindow& window) {
         button.draw(window);
     }
     
-    // Draw the slider if in options menu
+    // Draw options menu specific controls
     if (currentState == GameState::OPTIONS) {
+        // Draw FPS controls
         fpsSlider.draw(window);
-        // Draw FPS label
         sf::Text fpsLabel;
         fpsLabel.setFont(font);
         fpsLabel.setCharacterSize(24);
@@ -335,8 +420,14 @@ void MenuState::draw(sf::RenderWindow& window) {
         fpsLabel.setFillColor(sf::Color::White);
         fpsLabel.setOutlineColor(sf::Color::Black);
         fpsLabel.setOutlineThickness(1);
-        fpsLabel.setPosition(440, 280);
+        fpsLabel.setPosition(440, 200);
         window.draw(fpsLabel);
+        
+        // Draw block selection controls
+        window.draw(backgroundBlockLabel);
+        for (auto& button : blockButtons) {
+            button.draw(window);
+        }
     }
     
     // Draw world creation fields
@@ -405,6 +496,7 @@ void MenuState::cycleFps() {
         case 120: maxFps = 144; break;
         case 144: maxFps = 240; break;
         case 240: maxFps = 0; break;  // 0 means unlimited
+        case 0: maxFps = 30; break;   // cycle back to 30
         default: maxFps = 30; break;
     }
 }
@@ -437,4 +529,87 @@ std::string MenuState::getFpsString() const {
 
 void MenuState::setOnMaxFpsChange(std::function<void(int)> callback) {
     onMaxFpsChange = callback;
+}
+
+void MenuState::setMenuBackgroundBlock(TileType type) {
+    menuBackgroundBlock = type;
+    updateMenuBackground();
+    
+    // Update button highlighting
+    for (auto& button : blockButtons) {
+        button.setOutlineThickness(0);
+    }
+    
+    // Find and highlight the selected button
+    for (size_t i = 0; i < blockButtons.size(); i++) {
+        TileType buttonType = static_cast<TileType>(i + 1); // Offset by 1 since AIR is 0
+        
+        if (buttonType == menuBackgroundBlock) {
+            blockButtons[i].setOutlineColor(sf::Color::Yellow);
+            blockButtons[i].setOutlineThickness(3);
+            break;
+        }
+    }
+}
+
+void MenuState::updateMenuBackground() {
+    // Instead of using textures, set background color based on block type
+    sf::Color bgColor;
+    
+    switch (menuBackgroundBlock) {
+        case TileType::DIRT:
+            bgColor = sf::Color(150, 75, 0);
+            break;
+        case TileType::GRASS:
+            bgColor = sf::Color(34, 139, 34);
+            break;
+        case TileType::STONE:
+            bgColor = sf::Color(128, 128, 128);
+            break;
+        case TileType::BRICK:
+            bgColor = sf::Color(165, 42, 42);
+            break;
+        case TileType::SNOW:
+            bgColor = sf::Color(255, 250, 250);
+            break;
+        case TileType::TRUNK:
+            bgColor = sf::Color(139, 69, 19);
+            break;
+        case TileType::LEAVES:
+            bgColor = sf::Color(0, 128, 0);
+            break;
+        case TileType::SAND:
+            bgColor = sf::Color(194, 178, 128);
+            break;
+        default:
+            bgColor = sf::Color(128, 128, 128); // Default gray
+            break;
+    }
+    
+    // Create a 1x1 texture with the chosen color
+    sf::Image img;
+    img.create(1, 1, bgColor);
+    
+    backgroundTexture.loadFromImage(img);
+    background.setTexture(backgroundTexture, true);
+    
+    // Make sure the background covers the entire window
+    background.setScale(1280.0f, 720.0f);
+    
+    // Force redraw of all UI elements to ensure background is updated
+    std::cout << "Updated background to: " << getBackgroundBlockString() << std::endl;
+}
+
+std::string MenuState::getBackgroundBlockString() const {
+    switch (menuBackgroundBlock) {
+        case TileType::DIRT: return "DIRT";
+        case TileType::GRASS: return "GRASS";
+        case TileType::STONE: return "STONE";
+        case TileType::BRICK: return "BRICK";
+        case TileType::SNOW: return "SNOW";
+        case TileType::TRUNK: return "WOOD";
+        case TileType::LEAVES: return "LEAVES";
+        case TileType::SAND: return "SAND";
+        default: return "UNKNOWN";
+    }
 } 

@@ -24,14 +24,51 @@ if not exist bin\assets\textures mkdir bin\assets\textures
 echo Copying DLLs...
 copy SFML\bin\*.dll bin
 
-echo Copying textures...
+echo Setting up textures...
 if exist kenney_voxel-pack (
-    if not exist bin\kenney_voxel-pack mkdir bin\kenney_voxel-pack
-    if not exist bin\kenney_voxel-pack\PNG mkdir bin\kenney_voxel-pack\PNG
-    if not exist bin\kenney_voxel-pack\PNG\Tiles mkdir bin\kenney_voxel-pack\PNG\Tiles
-    copy kenney_voxel-pack\PNG\Tiles\*.png bin\kenney_voxel-pack\PNG\Tiles\
+    REM First, delete any existing textures to avoid issues
+    if exist bin\assets\textures\*.* del /Q bin\assets\textures\*.*
     
-    copy kenney_voxel-pack\PNG\Tiles\*.png bin\assets\textures\
+    REM Create necessary subdirectories
+    if not exist bin\assets\textures\desert mkdir bin\assets\textures\desert
+    if not exist bin\assets\textures\Ground mkdir bin\assets\textures\Ground
+    if not exist bin\assets\textures\Stone mkdir bin\assets\textures\Stone
+    if not exist bin\assets\textures\Ores mkdir bin\assets\textures\Ores
+    if not exist bin\assets\textures\Wood mkdir bin\assets\textures\Wood
+    if not exist bin\assets\textures\Wood\oak mkdir bin\assets\textures\Wood\oak
+    
+    REM Copy base textures
+    echo Copying base textures...
+    copy kenney_voxel-pack\PNG\Tiles\lava.png bin\assets\textures\
+    copy kenney_voxel-pack\PNG\Tiles\water.png bin\assets\textures\
+    copy kenney_voxel-pack\PNG\Tiles\snow.png bin\assets\textures\
+    copy kenney_voxel-pack\PNG\Tiles\brick_grey.png bin\assets\textures\
+    
+    REM Copy desert tiles
+    copy kenney_voxel-pack\PNG\Tiles\desert\sand.png bin\assets\textures\
+    
+    REM Copy Ground tiles
+    copy kenney_voxel-pack\PNG\Tiles\Ground\dirt.png bin\assets\textures\
+    copy kenney_voxel-pack\PNG\Tiles\Ground\dirt_grass.png bin\assets\textures\
+    copy kenney_voxel-pack\PNG\Tiles\Ground\dirt_snow.png bin\assets\textures\
+    
+    REM Copy Stone tiles
+    copy kenney_voxel-pack\PNG\Tiles\Stone\stone.png bin\assets\textures\
+    copy kenney_voxel-pack\PNG\Tiles\Stone\gravel_stone.png bin\assets\textures\
+    
+    REM Copy Ore tiles
+    copy kenney_voxel-pack\PNG\Tiles\Ores\stone_coal.png bin\assets\textures\
+    copy kenney_voxel-pack\PNG\Tiles\Ores\stone_gold.png bin\assets\textures\
+    copy kenney_voxel-pack\PNG\Tiles\Ores\stone_silver.png bin\assets\textures\
+    copy kenney_voxel-pack\PNG\Tiles\Ores\stone_diamond.png bin\assets\textures\
+    
+    REM Copy Wood tiles
+    copy kenney_voxel-pack\PNG\Tiles\Wood\oak\oak_wood.png bin\assets\textures\
+    copy kenney_voxel-pack\PNG\Tiles\Wood\oak\leaves_transparent.png bin\assets\textures\
+    
+    REM Verify texture files were copied
+    echo Verifying textures...
+    dir bin\assets\textures\*.png
 )
 
 echo Compiling project...
