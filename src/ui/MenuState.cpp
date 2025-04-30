@@ -38,6 +38,12 @@ bool MenuState::initialize() {
     // Setup background
     background.setTexture(backgroundTexture, true);
     
+    // Scale the background to cover the entire window
+    background.setScale(
+        1280.0f / backgroundTexture.getSize().x,
+        720.0f / backgroundTexture.getSize().y
+    );
+    
     // Set up title with Minecraft-like styling
     title.setFont(font);
     title.setCharacterSize(72);
@@ -369,9 +375,7 @@ void MenuState::cycleGameMode() {
     }
     
     // Update the button text immediately after changing the game mode
-    if (currentState == GameState::WORLD_CREATION) {
-        modeButton.setText(getGameModeString());
-    }
+    modeButton.setText(getGameModeString());
 }
 
 void MenuState::cycleDifficulty() {
@@ -391,9 +395,7 @@ void MenuState::cycleDifficulty() {
     }
     
     // Update the button text immediately after changing the difficulty
-    if (currentState == GameState::WORLD_CREATION) {
-        difficultyButton.setText(getDifficultyString());
-    }
+    difficultyButton.setText(getDifficultyString());
 }
 
 void MenuState::cycleFps() {

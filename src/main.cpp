@@ -58,12 +58,13 @@ int main() {
         currentState = newState;
     });
     
-    menuState.setOnCreateWorld([&worldName, &gameMode, &difficulty, &camera](
+    menuState.setOnCreateWorld([&worldName, &gameMode, &difficulty, &camera, &currentState](
         const std::string& name, GameMode mode, Difficulty diff) {
         worldName = name;
         gameMode = mode;
         difficulty = diff;
         camera.setCreativeMode(gameMode == GameMode::CREATIVE);
+        currentState = GameState::GAME;  // Ensure state change happens here
     });
     
     menuState.setOnMaxFpsChange([&maxFps, &window](int fps) {
@@ -250,6 +251,12 @@ int main() {
             window.draw(chunkText);
             window.draw(fpsText);
             window.draw(gameInfoText);
+            
+            // Draw additional UI elements based on game mode
+            if (gameMode == GameMode::SURVIVAL) {
+                // Add any survival-specific UI elements here if needed
+                // For now, we're making sure UI is always shown
+            }
             
             // Restore the game view
             window.setView(prevView);
