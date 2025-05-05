@@ -89,7 +89,7 @@ void Chunk::generateTrees(uint64_t seed, int /*worldOffset*/) {
                 if (tiles[x][y] == TileType::GRASS) {
                     // Place a tree at this position if there's enough room above
                     int treeHeight = heightDist(rng);
-                    if (y - treeHeight > 4) { // Ensure enough space for trunk and leaves
+                    if (y - treeHeight >= 4) { // Ensure enough space for trunk and leaves
                         // Place trunk sections (vertical column)
                         for (int i = 1; i <= treeHeight; i++) {
                             tiles[x][y-i] = TileType::TRUNK;

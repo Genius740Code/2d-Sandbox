@@ -10,6 +10,9 @@ private:
     int viewportWidth, viewportHeight;
     int worldWidth, worldHeight;
     float moveSpeed;
+    
+    // Helper method to keep coordinates within world boundaries
+    float applyBoundary(float value, float viewportDimension, float worldDimension) const;
 
 public:
     Camera(int vpWidth, int vpHeight, int wWidth, int wHeight);
@@ -19,4 +22,5 @@ public:
     const sf::View& getView() const;
     void setCreativeMode(bool isCreative);
     void reset();
+    void setPosition(float x, float y);
 }; 

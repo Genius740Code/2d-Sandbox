@@ -5,6 +5,7 @@
 #include <map>
 #include <iostream>
 #include <cstdint>
+#include <memory>
 #include "../engine/PerlinNoise.h"
 #include "Chunk.h"
 #include "TileManager.h"
@@ -26,7 +27,7 @@ private:
     TileManager tileManager;
     
     // Map of active chunks (key is chunk X position)
-    std::map<int, Chunk*> activeChunks;
+    std::map<int, std::unique_ptr<Chunk>> activeChunks;
     
     void updateActiveChunks(int centerChunkX);
     

@@ -12,14 +12,19 @@ Camera::Camera(int vpWidth, int vpHeight, int wWidth, int wHeight) :
     view.setCenter(wWidth / 2.0f, wHeight / 3.0f); // Position to see more of the surface
 }
 
+// Helper function to keep coordinates within world boundaries
+float Camera::applyBoundary(float value, float viewportDimension, float worldDimension) const {
+    return std::max(viewportDimension / 4.0f, std::min(value, worldDimension - viewportDimension / 4.0f));
+}
+
 void Camera::move(float dx, float dy, float dt) {
     // Calculate new position with delta time
     float newX = view.getCenter().x + dx * moveSpeed * dt;
     float newY = view.getCenter().y + dy * moveSpeed * dt;
     
-    // Apply bounds checking
-    newX = std::max(viewportWidth / 4.0f, std::min(newX, worldWidth - viewportWidth / 4.0f));
-    newY = std::max(viewportHeight / 4.0f, std::min(newY, worldHeight - viewportHeight / 4.0f));
+    // Apply bounds checking using the helper function
+    newX = applyBoundary(newX, viewportWidth, worldWidth);
+    newY = applyBoundary(newY, viewportHeight, worldHeight);
     
     // Set the new center
     view.setCenter(newX, newY);
@@ -48,4 +53,13 @@ void Camera::reset() {
     view.setCenter(worldWidth / 2.0f, worldHeight / 3.0f);
     // Reset zoom to closer default view
     view.setSize(static_cast<float>(viewportWidth) * 0.7f, static_cast<float>(viewportHeight) * 0.7f);
+}
+
+void Camera::setPosition(float x, float y) {
+    // Apply bounds checking to keep view within world boundaries using the helper function
+    float boundedX = applyBoundary(x, viewportWidth, worldWidth);
+    float boundedY = applyBoundary(y, viewportHeight, worldHeight);
+    
+    // Set the new center position directly
+    view.setCenter(boundedX, boundedY);
 } 

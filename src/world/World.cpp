@@ -25,18 +25,13 @@ World::World(int height, int tileSize, uint64_t seed) :
 }
 
 World::~World() {
-    // Clean up all active chunks
-    for (auto& pair : activeChunks) {
-        delete pair.second;
-    }
+    // With smart pointers, manual cleanup is no longer needed
+    // Chunks will be automatically deleted when the map is cleared
     activeChunks.clear();
 }
 
 void World::reset(uint64_t seed) {
-    // Delete all existing chunks
-    for (auto& pair : activeChunks) {
-        delete pair.second;
-    }
+    // Clear all existing chunks
     activeChunks.clear();
     
     // Set new seed
@@ -48,7 +43,7 @@ void World::reset(uint64_t seed) {
 
 void World::update(float viewCenterX) {
     // Calculate the center chunk
-    int centerChunkX = static_cast<int>(viewCenterX / (CHUNK_WIDTH * tileSize)) / 1;
+    int centerChunkX = static_cast<int>(viewCenterX / (CHUNK_WIDTH * tileSize));
     
     // Update active chunks based on new center
     updateActiveChunks(centerChunkX);
@@ -69,7 +64,6 @@ void World::updateActiveChunks(int centerChunkX) {
     
     // Remove chunks outside view distance
     for (int chunkX : chunksToRemove) {
-        delete activeChunks[chunkX];
         activeChunks.erase(chunkX);
     }
     
@@ -85,7 +79,7 @@ void World::updateActiveChunks(int centerChunkX) {
         }
         
         // Create chunk object and generate terrain
-        Chunk* chunk = new Chunk(
+        auto chunk = std::make_unique<Chunk>(
             x, CHUNK_WIDTH, worldHeight, tileSize,
             tileManager.getTexture(TileType::GRASS),
             tileManager.getTexture(TileType::DIRT),
@@ -97,15 +91,16 @@ void World::updateActiveChunks(int centerChunkX) {
         
         // Queue for generation
         chunksToGenerate.push_back(x);
-        activeChunks[x] = chunk;
+        activeChunks[x] = std::move(chunk);
     }
     
     // Generate chunks in a separate phase to allow for multithreading in future
     for (int x : chunksToGenerate) {
-        if (activeChunks.find(x) != activeChunks.end()) {
+        auto it = activeChunks.find(x);
+        if (it != activeChunks.end()) {
             // Calculate the world offset for this chunk
             int worldOffset = x * CHUNK_WIDTH;
-            activeChunks[x]->generate(terrainNoise, currentSeed, worldOffset);
+            it->second->generate(terrainNoise, currentSeed, worldOffset);
         }
     }
 }

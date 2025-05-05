@@ -82,11 +82,40 @@ bool TileManager::loadTextures() {
 }
 
 sf::Texture* TileManager::getTexture(TileType type) {
-    if (tileTextures.find(type) != tileTextures.end()) {
-        return &tileTextures[type];
+    // First check if the texture exists
+    auto it = tileTextures.find(type);
+    if (it != tileTextures.end()) {
+        return &it->second;
     }
-    std::cerr << "Warning: Attempted to get non-existent texture for type: " << static_cast<int>(type) << std::endl;
-    return nullptr;
+    
+    // Texture not found, log the issue
+    std::cerr << "Warning: Attempted to get non-existent texture for type: " 
+              << static_cast<int>(type) << std::endl;
+    
+    // Try to use dirt texture as fallback
+    auto fallback = tileTextures.find(TileType::DIRT);
+    if (fallback != tileTextures.end()) {
+        std::cerr << "Using dirt texture as fallback" << std::endl;
+        return &fallback->second;
+    }
+    
+    // If even dirt texture is missing, load an emergency texture
+    if (tileTextures.empty()) {
+        static sf::Texture emergencyTexture;
+        if (!emergencyTexture.loadFromFile("assets/textures/dirt.png")) {
+            // Create a small default texture with a bright color for visibility
+            sf::Image img;
+            img.create(16, 16, sf::Color::Magenta);
+            emergencyTexture.loadFromImage(img);
+            emergencyTexture.setSmooth(false);
+        }
+        std::cerr << "Using emergency texture as last resort" << std::endl;
+        return &emergencyTexture;
+    }
+    
+    // Last resort: return the first available texture
+    std::cerr << "Using first available texture as last resort" << std::endl;
+    return &tileTextures.begin()->second;
 }
 
 void TileManager::setTexturePath(const std::string& path) {

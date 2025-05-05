@@ -16,6 +16,11 @@ int main() {
     const int windowWidth = 1280;
     const int windowHeight = 720;
     sf::RenderWindow window(sf::VideoMode(windowWidth, windowHeight), "2D Minecraft");
+    
+    // Enable V-SYNC for smoother rendering
+    window.setVerticalSyncEnabled(true);
+    
+    // Set frame rate limit as a fallback in case V-SYNC doesn't work
     window.setFramerateLimit(60);
     
     // World parameters
@@ -28,6 +33,7 @@ int main() {
     Difficulty difficulty = Difficulty::NORMAL;
     std::string worldName = "New World";
     int maxFps = 60;
+    bool vsyncEnabled = true;
     
     // Create menu system
     MenuState menuState;
@@ -60,26 +66,41 @@ int main() {
     
     menuState.setOnCreateWorld([&worldName, &gameMode, &difficulty, &camera, &currentState](
         const std::string& name, GameMode mode, Difficulty diff) {
-        worldName = name;
+        worldName = name.empty() ? "New World" : name; // Ensure world name is not empty
         gameMode = mode;
         difficulty = diff;
         camera.setCreativeMode(gameMode == GameMode::CREATIVE);
         currentState = GameState::GAME;  // Ensure state change happens here
     });
     
-    menuState.setOnMaxFpsChange([&maxFps, &window](int fps) {
+    menuState.setOnMaxFpsChange([&maxFps, &window, &vsyncEnabled](int fps) {
         maxFps = fps;
-        if (maxFps == 0) {
+        
+        if (fps == 0) {
+            // Unlimited FPS - Disable V-SYNC and frame limit
             window.setFramerateLimit(0);
-        } else {
+            window.setVerticalSyncEnabled(false);
+            vsyncEnabled = false;
+        } 
+        else if (fps == 60) {
+            // 60 FPS - Use V-SYNC for better performance
+            window.setFramerateLimit(0);  // No limit needed with V-SYNC
+            window.setVerticalSyncEnabled(true);
+            vsyncEnabled = true;
+        }
+        else {
+            // Custom FPS limit - Disable V-SYNC
             window.setFramerateLimit(maxFps);
+            window.setVerticalSyncEnabled(false);
+            vsyncEnabled = false;
         }
     });
     
     // Font for in-game UI
     sf::Font font;
-    if (!font.loadFromFile("C:\\Windows\\Fonts\\Arial.ttf")) {
+    if (!font.loadFromFile("assets/fonts/arial.ttf")) {
         std::cerr << "Failed to load font!" << std::endl;
+        return 1;  // Exit if font can't be loaded - this is a critical error
     }
     
     sf::Text chunkText;
@@ -230,7 +251,12 @@ int main() {
             std::string diffStr = (difficulty == Difficulty::PEACEFUL) ? "Peaceful" :
                               (difficulty == Difficulty::EASY) ? "Easy" :
                               (difficulty == Difficulty::NORMAL) ? "Normal" : "Hard";
-            gameInfoText.setString("World: " + worldName + " | Mode: " + modeStr + " | Difficulty: " + diffStr);
+            std::string vsyncStr = vsyncEnabled ? " | VSync: On" : "";
+            std::string fpsLimitStr = maxFps == 0 ? "Unlimited" : std::to_string(maxFps);
+            
+            gameInfoText.setString("World: " + worldName + " | Mode: " + modeStr + 
+                                  " | Difficulty: " + diffStr + 
+                                  " | FPS Limit: " + fpsLimitStr + vsyncStr);
             
             // Update the view
             window.setView(view);
